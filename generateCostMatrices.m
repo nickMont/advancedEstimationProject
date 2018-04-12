@@ -1,4 +1,4 @@
-function [Jpur,Jeva] = generateCostMatrices(Spur, Seva, gameState)
+function [Jpur,Jeva] = generateCostMatrices(Spur, Seva, gameState,vk)
 %inputs:
 %     structures Spur,Seva containing:
 %        uMat   %Possible control value structure. uMat{ik} contains the
@@ -25,12 +25,13 @@ Jpur=9001*ones(nmodP,nmodE);
 Jeva=42*ones(nmodP,nmodE);
 
 nx = length(gameState.xPur);
+nv=nx/2;
 state = zeros(nx,gameState.kMax+1);
 xPurCell = cell(nmodP);
 for ij=1:nmodP
     state(:,1)=gameState.xPur;
     for ik=1:gameState.kMax
-        state(:,ik+1) = feval(Spur.fname,state(:,ik),dt,Spur.uMat{ij}(:,ik));
+        state(:,ik+1) = feval(Spur.fname,state(:,ik),dt,Spur.uMat{ij}(:,ik),zeros(nv,1));
     end
     xPurCell{ij} = state;
 end
@@ -41,7 +42,7 @@ xEvaCell = cell(nmodP);
 for ij=1:nmodP
     state(:,1)=gameState.xEva;
     for ik=1:gameState.kMax
-        state(:,ik+1) = feval(Seva.fname,state(:,ik),dt,Spur.uMat{ij}(:,ik));
+        state(:,ik+1) = feval(Seva.fname,state(:,ik),dt,Spur.uMat{ij}(:,ik),zeros(nv,1));
     end
     xEvaCell{ij} = state;
 end
