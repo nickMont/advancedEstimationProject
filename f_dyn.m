@@ -4,12 +4,19 @@ if nargin<=3
 end
 lenv=floor(length(vk)/2);
 
+%Generate cost matrices
 [Cpur,Ceva]=generateCostMatrices(Spur,Seva,gameState);
+
+%aa=LH2(-Cpur,-Ceva)
+%lhPur=aa{1}
+%lhEva=aa{2}
+
+%Solve Nash
 [rdeq,flag]=findRDEq(-Cpur,-Ceva);
 if flag==0 %if no unique solution, run LH2 and take E(u) for result
     sol=LH2(-Cpur,-Ceva);
-    uPur = zeros(size(Spur.uMat));
-    uEva = zeros(size(Seva.uMat));
+    uPur = zeros(gameState.nu,1);
+    uEva = zeros(gameState.nu,1);
     for ij=1:length(sol{1})
         uPur=uPur + sol{1}(ij)*Spur.uMat{ij};
     end
@@ -18,10 +25,13 @@ if flag==0 %if no unique solution, run LH2 and take E(u) for result
     end
 else %unique solution found
     up_index=rdeq(1,1);
-    ue_index=rdeq(1,2);
+    ue_index=rdeq(2,1);
     uPur=Spur.uMat{up_index};
     uEva=Seva.uMat{ue_index};
 end
+
+uPur
+uEva
 
 xkp1_pur = f_dynPur(gameState.xPur,uPur,gameState.dt,vk(1:lenv));
 xkp1_eva = f_dynEva(gameState.xEva,uEva,gameState.dt,vk(lenv+1:lenv*2));

@@ -31,18 +31,18 @@ xPurCell = cell(nmodP);
 for ij=1:nmodP
     state(:,1)=gameState.xPur;
     for ik=1:gameState.kMax
-        state(:,ik+1) = feval(Spur.fname,state(:,ik),dt,Spur.uMat{ij}(:,ik),zeros(nv,1));
+        state(:,ik+1) = feval(Spur.fname,state(:,ik),Spur.uMat{ij}(:,ik),gameState.dt,zeros(nv,1));
     end
     xPurCell{ij} = state;
 end
 
 nx = length(gameState.xEva);
 state = zeros(nx,gameState.kMax+1);
-xEvaCell = cell(nmodP);
-for ij=1:nmodP
+xEvaCell = cell(nmodE);
+for ij=1:nmodE
     state(:,1)=gameState.xEva;
     for ik=1:gameState.kMax
-        state(:,ik+1) = feval(Seva.fname,state(:,ik),dt,Spur.uMat{ij}(:,ik),zeros(nv,1));
+        state(:,ik+1) = feval(Seva.fname,state(:,ik),Seva.uMat{ij}(:,ik),gameState.dt,zeros(nv,1));
     end
     xEvaCell{ij} = state;
 end
@@ -57,9 +57,6 @@ for iP=1:nmodP
         Jeva(iP,iE)=feval(Seva.Jname,xEvaCell{iE},xPurCell{iP},Seva.uMat{iE},Spur.uMat{iP},Seva.Jparams);
     end
 end
-
-
-
 
 
 
