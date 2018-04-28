@@ -9,12 +9,15 @@ clear;clc;
 %   +y - -
 %
 
-rng(10)
+rngseedno=10;
+rng(rngseedno)
 
 plotFlag=0;
 
 tstep=1;
 tmax=20;
+
+utemp=permn(-2:.5:2,2)';
 
 Game.uType="velstep";
 %Options: velstep (step of constant size, from velocity)
@@ -25,7 +28,7 @@ Game.dt=tstep;
 % S contains state information
 
 Qpur = diag([100 100 0 0]); Rpur = diag([0.1 1]);
-Qeva = diag([10 10 0 0]); Reva = diag([1 1]);
+Qeva = diag([100 50 0 0]); Reva = diag([5 10]);
 
 qrTrue=[diag(Qeva);diag(Reva)];
 
@@ -72,14 +75,19 @@ xPur_part=zeros(14,npart);
 for ij=1:npart
     xPur_part(1:8,ij)=xTrue+chol(Ppur)'*randn(8,1);
 end
-xPur_part(9:14,1:npart)=randpe(6,npart,0.35,0.8,2.2);
+Qmax = 2.5; %10^order
+Qmin = 0.8;
+xPur_part(9:14,:)=randpe(6,npart,0.35,Qmin,Qmax);
 w_set_pf=1/npart*ones(npart,1);
 wloc=zeros(npart,1);
 
-cholQexcite=0.15;
-cholRexcite=0.15;
-cholExcitePlusOne=0.05;
+% Scaling on excitation for Jparams
+cholQexcite=0.05;
+cholRexcite=0.05;
+% P to do thing
+cholExcitePlusOne=0;
 cholExciteDropOrder=0.05;
+%cholExciteDropOrder=0;
 
 for ij=1:tstep:tmax
     n=n+1;
@@ -99,7 +107,6 @@ for ij=1:tstep:tmax
     gameState_p.dt=tstep;
     gameState_p.kMax=1;
     gameState_p.nu=2;
-    utemp=permn(-2:.5:1,2)';
     for ik=1:length(utemp)
         Spur_p.uMat{ik}=utemp(:,ik);
     end
@@ -133,30 +140,38 @@ for ij=1:tstep:tmax
     
     % Propagate particles
     for ik=1:npart
-        Seva_p.Jparams.Q=diag(xPur_part(9:12));
-        Seva_p.Jparams.Rself=diag(xPur_part(13:14));
+        gameState_p.xPur=xPur_part(1:4,ik);
+        gameState_p.xEva=xPur_part(5:8,ik);
+        Seva_p.Jparams.Q=diag(xPur_part(9:12,ik));
+        Seva_p.Jparams.Rself=diag(xPur_part(13:14,ik));
         [up,ue,flag]=f_dyn(Spur_p,Seva_p,gameState_p,zeros(4,1));
         if flag==0
             upp=randsample(1:length(Spur_p.uMat),1,true,up);
-            uPurTrue=Spur_p.uMat{upp}(:,1);
-            uEvaEst=zeros(gameState_p.nu,gameState_p.kMax);
-            for ik=1:length(Seva_p.uMat)
-                uEvaEst=uEvaEst+ue(ik)*Seva_p.uMat{ik}(:,1);
+            uPurThis=Spur_p.uMat{upp}(:,1);
+            uEvaThis=zeros(gameState_p.nu,gameState_p.kMax);
+            for iL=1:length(Seva_p.uMat)
+                uEvaThis=uEvaThis+ue(iL)*Seva_p.uMat{iL}(:,1);
             end
             QinflatePur=Qnoisepur+blkdiag(zer2,1*eye2);
         else
-            uPurTrue=up;
-            uEvaEst=ue;
+            uPurThis=up;
+            uEvaThis=ue;
         end
-        xPur_part(1:4,ik)=f_dynPur(xPurMean(1:4),uPurTrue,tstep,cholQ2p*randn(2,1));
-        xPur_part(5:8,ik)=f_dynEva(xPurMean(5:8),uEvaEst ,tstep,cholQ2e*randn(2,1));
+        %uPurThis
+        %uEvaThis
+%        dxEx=xPur(5:8)-f_dynPur(xPur(5:8),uEvaThis,tstep,zeros(2,1))
+        xPur_part(1:4,ik)=f_dynPur(xPur_part(1:4,ik),uPurThis,tstep,cholQ2p*randn(2,1));
+        xPur_part(5:8,ik)=f_dynEva(xPur_part(5:8,ik),uEvaThis,tstep,cholQ2e*randn(2,1));
         xPur_part(9:12,ik)=diag(Seva_p.Jparams.Q).*10.^(cholQexcite*(rand(4,1)*2-1));
         xPur_part(13:14,ik)=diag(Seva_p.Jparams.Rself).*10.^(cholRexcite*(rand(2,1)*2-1));
         for iL=1:6
-            if(cholExcitePlusOne<=rand) %breaking out of zero
+            if(rand<=cholExcitePlusOne) %breaking out of zero
                 xPur_part(8+iL,ik)=xPur_part(8+iL,ik)+1;
-            elseif (cholExciteDropOrder<=rand)
+            elseif (rand<=cholExciteDropOrder)
                 xPur_part(8+iL,ik)=xPur_part(8+iL,ik)*0.1;
+            end
+            if xPur_part(8+iL,ik)>10^Qmax
+                xPur_part(8+iL,ik)=10^Qmax;
             end
         end
     end
@@ -177,7 +192,6 @@ for ij=1:tstep:tmax
     gameState_e.dt=tstep;
     gameState_e.kMax=1;
     gameState_e.nu=2;
-    utemp=permn(-2:.5:1,2)';
     for ik=1:length(utemp)
         Spur_e.uMat{ik}=utemp(:,ik);
     end
@@ -200,8 +214,8 @@ for ij=1:tstep:tmax
         uee=randsample(1:length(Seva_e.uMat),1,true,ue);
         uEvaTrue=Seva_e.uMat{uee}(:,1);
         uPurEst=zeros(gameState_p.nu,gameState_p.kMax);
-        for ik=1:length(Seva_p.uMat)
-            uPurEst=uPurEst+up(ik)*Seva_p.uMat{ik}(:,1);
+        for ik=1:length(Spur_e.uMat)
+            uPurEst=uPurEst+up(ik)*Spur_e.uMat{ik}(:,1);
         end
         QinflateEva=Qnoiseeva+blkdiag(1*eye2, zer2);
     else
@@ -227,16 +241,22 @@ for ij=1:tstep:tmax
         zhat=H14*xPur_part(:,ik);
         nu=zPur-zhat;
         wloc(ik)=w_set_pf(ik,n)*mvnpdf(nu,zeros(4,1),(Sk+Sk')/2)+1e-10;
+        %wloc(ik)
     end
     wloc = wloc/sum(wloc);
     meann=zeros(14,1);
     for ik=1:npart
         meann=meann+wloc(ik)*xPur_part(:,ik);
     end
-    dx=xPur-meann(1:8)
-    dJ=qrTrue-meann(9:14)
-
-        
+    %dx=xPur-meann(1:8)
+    dJ=meann(9:14)-qrTrue
+    
+    % Recenter particles, not technically correct but I'm going to see if
+    %   the performance improves
+%     for ik=1:npart
+%         xPur_part(1:8,ik)=xPur;
+%     end
+    
     %Resample if necessary
     ind=sysresample(wloc);
     wloc = wloc(ind)/sum(wloc(ind));

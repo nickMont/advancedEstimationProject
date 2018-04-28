@@ -13,6 +13,10 @@ lenv=floor(length(vk)/2);
 outputflag=1;
 %Solve Nash
 [rdeq,flag]=findRDEq(-Cpur,-Ceva);
+sol2=LH2(-Cpur,-Ceva);
+%R=Seva.Jparams.Rself
+%mp=max(sol2{1})
+%me=max(sol2{2})
 if flag==0 %if no unique solution, run LH2 and take E(u) for result
     sol=LH2(-Cpur,-Ceva);
 %     uPur = zeros(gameState.nu,1);
