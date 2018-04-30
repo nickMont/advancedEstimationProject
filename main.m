@@ -71,7 +71,7 @@ axis(axisveck)
 end
 
 %Particle filter initialization
-npart=50;
+npart=5000;
 xPur_part=zeros(14,npart);
 for ij=1:npart
     xPur_part(1:8,ij)=xTrue+chol(Ppur)'*randn(8,1);
@@ -87,9 +87,8 @@ wloc=w_set_pf;
 cholQexcite=0.05;
 cholRexcite=0.05;
 % P to do thing
-cholExcitePlusOne=0;
-cholExciteDropOrder=0.05;
-%cholExciteDropOrder=0;
+cholExcitePlusOne=0.05;
+cholExciteDropOrder=0.00;
 
 wStore{1}=wloc;
 xPartStore{1}=xPur_part;
@@ -176,9 +175,9 @@ for ij=1:tstep:tmax
         xPur_part(9:12,ik)=diag(Seva_p.Jparams.Q).*10.^(cholQexcite*(rand(4,1)*2-1));
         xPur_part(13:14,ik)=diag(Seva_p.Jparams.Rself).*10.^(cholRexcite*(rand(2,1)*2-1));
         for iL=1:6
-            if(rand<=cholExcitePlusOne) %breaking out of zero
+            if(rand<=cholExcitePlusOne && xPur_part(8+iL,ik)<1e-8) %breaking out of zero
                 xPur_part(8+iL,ik)=xPur_part(8+iL,ik)+1;
-            elseif (rand<=cholExciteDropOrder)
+            elseif (rand<=cholExciteDropOrder && xPur_part(8+iL,ik)>1e-8)
                 xPur_part(8+iL,ik)=xPur_part(8+iL,ik)*0.1;
             end
             if xPur_part(8+iL,ik)>10^Qmax
