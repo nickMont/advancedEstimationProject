@@ -42,12 +42,13 @@ H14=[Hpur zeros(4,6)];
 
 dt=tstep;
 n=2; %n is dim(x)/2 so I can copy/paste dynamic functions
-Abk1=[eye(n) dt*eye(n); zeros(n,n) 0.35*eye(n)]; %Apur
+Abk1=[eye(n) dt*eye(n); zeros(n,n) 0.3*eye(n)]; %Apur
 Abk2=[eye(n) dt*eye(n); zeros(n,n) 0.3*eye(n)]; %Aeva
 Aeva=blkdiag(Abk1,Abk2);
 Gnoiseeva=blkdiag([eye(n)*dt^2/2;eye(n)*dt],[eye(n)*dt^2/2;eye(n)*dt]);
 Qnoiseeva=0.002*eye(4);
 Qnoisepur=Qnoiseeva;
+GQG=Gnoiseeva*Qnoiseeva*Gnoiseeva';
 cholQ2p=chol(Qnoisepur(1:2,1:2))'; cholQ2e=chol(Qnoisepur(3:4,3:4))';
 Bnoiseeva=Gnoiseeva;
 Peva=1e-2*eye(8);
@@ -78,8 +79,9 @@ end
 Qmax = 2.5; %10^order
 Qmin = 0.8;
 xPur_part(9:14,:)=randpe(6,npart,0.35,Qmin,Qmax);
+xbarprev=mean(xPur_part,2);
 w_set_pf=1/npart*ones(npart,1);
-wloc=zeros(npart,1);
+wloc=w_set_pf;
 
 % Scaling on excitation for Jparams
 cholQexcite=0.05;
@@ -89,8 +91,15 @@ cholExcitePlusOne=0;
 cholExciteDropOrder=0.05;
 %cholExciteDropOrder=0;
 
+wStore{1}=wloc;
+xPartStore{1}=xPur_part;
+xPurS{1}=xPur;
+xEvaS{1}=xEva;
+xTrueS{1}=xTrue;
+
 for ij=1:tstep:tmax
-    n=n+1;
+    n=n+1
+    tic
     
     %reset noise inflations
     QinflatePur=Qnoisepur;
@@ -138,6 +147,8 @@ for ij=1:tstep:tmax
     xPur_bar(1:4)=f_dynPur(xPurMean(1:4),uPurTrue,tstep,zeros(2,1));
     xPur_bar(5:8)=f_dynEva(xPurMean(5:8),uEvaEst ,tstep,zeros(2,1));
     
+    uPstore={};uEstore={};
+    
     % Propagate particles
     for ik=1:npart
         gameState_p.xPur=xPur_part(1:4,ik);
@@ -157,8 +168,8 @@ for ij=1:tstep:tmax
             uPurThis=up;
             uEvaThis=ue;
         end
-        %uPurThis
-        %uEvaThis
+        uPstore{ik}=uPurThis;
+        uEstore{ik}=uEvaThis;
 %        dxEx=xPur(5:8)-f_dynPur(xPur(5:8),uEvaThis,tstep,zeros(2,1))
         xPur_part(1:4,ik)=f_dynPur(xPur_part(1:4,ik),uPurThis,tstep,cholQ2p*randn(2,1));
         xPur_part(5:8,ik)=f_dynEva(xPur_part(5:8,ik),uEvaThis,tstep,cholQ2e*randn(2,1));
@@ -183,8 +194,8 @@ for ij=1:tstep:tmax
     for ik=1:npart
         Pkbar=Pkbar+w_set_pf(ik,n)*(xPur_part(:,ik)-xkbar)*(xPur_part(:,ik)-xkbar)';
     end
-    
     wloc=w_set_pf(:,n);
+    wloc=wloc/sum(wloc);
     
     %Omniscient evader
     gameState_e.xPur=xEva(1:4);
@@ -258,9 +269,17 @@ for ij=1:tstep:tmax
 %     end
     
     %Resample if necessary
+%     Neff=1/sum(wloc.^2);
+%     if Neff<=npart/2
     ind=sysresample(wloc);
     wloc = wloc(ind)/sum(wloc(ind));
     xPur_part(:,:)=xPur_part(:,ind);
+    wStore{n+1}=wloc;
+    xPartStore{n+1}=xPur_part;
+    xPurS{n+1}=xPur;
+    xEvaS{n+1}=xEva;
+    xTrueS{n+1}=xTrue;
+%     end
     
     w_set_pf = [w_set_pf wloc];
 
@@ -278,6 +297,7 @@ for ij=1:tstep:tmax
     axis(axisveck)
     end
     
+    tThisStep=toc
 end
 
 
