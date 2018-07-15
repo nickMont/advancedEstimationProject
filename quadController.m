@@ -42,7 +42,7 @@ rotor_loc=[r1loc r2loc r3loc r4loc];
 J=[.75 0 0
    0 .80 0
    0 0 1];
-cds=[.1;.1;.2];
+cds=[1;1;.2];
 wdir=[1 -1 1 -1];
 cls=[.01;.01];
 

@@ -38,11 +38,11 @@ end
 
 uValP=[];
 uValE=[];
-if ~uP.isempty
+if ~(isempty(uP))
     uInd=randsample(length(sol{1}),1,true,sol{1});
-    uValP=uP(:,uInd);
+    uValP=uP{uInd};
     uInd=randsample(length(sol{2}),1,true,sol{2});
-    uValE=uE(:,uInd);    
+    uValE=uE{uInd};    
 end
 
 end

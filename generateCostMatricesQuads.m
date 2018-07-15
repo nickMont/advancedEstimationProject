@@ -120,9 +120,12 @@ uOutPur={};
 uOutEva={};
 
 if (strcmp(gameState.discType,'overX'))
-    uOutPur=omegaRPur{validSetP};
-    uOutEva=omegaREva{validSetE};
-    
+    for iPv=1:nmodPvalid
+        uOutPur{iPv}=omegaRPur{validSetP(iPv)};
+    end
+    for iEv=1:nmodEvalid
+        uOutEva{iEv}=omegaREva{validSetE(iEv)};
+    end
 end
 
 end
