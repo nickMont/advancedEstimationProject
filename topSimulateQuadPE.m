@@ -1,17 +1,17 @@
 clear;clc;
 
-umin=-0.5;
-umax=0.5;
-du=0.1;
+umin=-0.6;
+umax=0.6;
+du=0.2;
 du2=100;
 
 dt=0.1;
 t0=0;
-tmax=5;
+tmax=10;
 
 n=0;
 z31=zeros(3,1);
-ewxvPur=[z31; z31; 1;0;0; z31];
+ewxvPur=[z31; z31; 1;0.1;0; z31];
 ewxvEva=[zeros(12,1)];
 xPur=[ewxvPur;ewxvEva];
 xEva=[ewxvPur;ewxvEva];
@@ -24,6 +24,10 @@ Qeva(7:9,7:9)=5*eye(3);
 Rpur=eye(4);
 Reva=eye(4);
 xStore=xPur;
+
+uPhist=[];
+uEhist=[];
+
 tic
 for t=t0:dt:tmax
     n=n+1;
@@ -109,6 +113,8 @@ for t=t0:dt:tmax
 %         des(7:9)=des(7:9)+uEvaTrue;
 %         uEvaTrue = quadController(xTrue(13:24),zeros(4,1),zeros(3,1),des,1,zeros(12,1));
     end
+    uPhist=[uPhist uPurTrue];
+    uEhist=[uEhist uEvaTrue];
     xTrue(1:12)=f_dynPurQuad(xTrue(1:12),uPurTrue(:,1),dt,zeros(2,1));
     xTrue(13:24)=f_dynEvaQuad(xTrue(13:24),uEvaTrue(:,1),dt,zeros(2,1));
     

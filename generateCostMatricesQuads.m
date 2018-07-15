@@ -116,6 +116,8 @@ for iPv=1:nmodPvalid
     end
 end
 
+fprintf('%d and %d valid P/E controls\n',nmodPvalid,nmodEvalid);
+
 uOutPur={};
 uOutEva={};
 

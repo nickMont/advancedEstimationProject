@@ -6,6 +6,7 @@ lenv=floor(length(vk)/2);
 
 %Generate cost matrices
 [Cpur,Ceva,uP,uE]=generateCostMatricesQuads(Spur,Seva,gameState);
+[nP,nE]=size(Cpur);
 
 %aa=LH2(-Cpur,-Ceva)
 %lhPur=aa{1}
@@ -39,9 +40,9 @@ end
 uValP=[];
 uValE=[];
 if ~(isempty(uP))
-    uInd=randsample(length(sol{1}),1,true,sol{1});
+    uInd=randsample(nP,1,true,uPur)
     uValP=uP{uInd};
-    uInd=randsample(length(sol{2}),1,true,sol{2});
+    uInd=randsample(nE,1,true,uEva)
     uValE=uE{uInd};    
 end
 

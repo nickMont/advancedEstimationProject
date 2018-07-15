@@ -234,8 +234,8 @@ end
 %Saturating body moments is the best way to preserve control inputs.
 %Saturating rotors can completely change input torques.
 
-phi_ddot_bodymax=20;
-theta_ddot_bodymax=20;
+phi_ddot_bodymax=2;
+theta_ddot_bodymax=2;
 psi_ddot_bodymax=10;
 
 % %Print desired body moments before saturation.
