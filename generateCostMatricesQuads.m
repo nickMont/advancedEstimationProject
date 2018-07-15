@@ -1,4 +1,4 @@
-function [Jpur,Jeva] = generateCostMatricesQuads(Spur, Seva, gameState,vk)
+function [Jpur,Jeva,uOutPur,uOutEva] = generateCostMatricesQuads(Spur, Seva, gameState,vk)
 %inputs:
 %     structures Spur,Seva containing:
 %        uMat   %Possible control value structure. uMat{ik} contains the
@@ -24,6 +24,8 @@ function [Jpur,Jeva] = generateCostMatricesQuads(Spur, Seva, gameState,vk)
 nmodP = length(Spur.uMat);
 nmodE = length(Seva.uMat);
 
+numberOfSatSteps=2; %maximum number of tries to generate feasible control
+
 Jpur=9001*ones(nmodP,nmodE);
 Jeva=42*ones(nmodP,nmodE);
 
@@ -32,10 +34,17 @@ nv=nx/2;
 state = zeros(nx,gameState.kMax+1);
 xPurCell = cell(nmodP);
 omegaRPur = cell(nmodP);
+
+global errorFlag
+errorFlag=false;
+
+validSetP=[];
+validSetE=[];
 for ij=1:nmodP
     uLoc=[];
     state(:,1)=gameState.xPur;
     if strcmp(gameState.discType,'overU')
+        validSetP=1:1:nmodP;
         for ik=1:gameState.kMax
             state(:,ik+1) = feval(Spur.fname,state(:,ik),Spur.uMat{ij}(:,ik),gameState.dt,zeros(nv,1));
             uLoc = [uLoc Spur.uMat{ij}(:,ik)];
@@ -45,8 +54,11 @@ for ij=1:nmodP
             dx = Spur.uMat{ij}(:,ik);
             des=state(:,ik);
             des(7:9)=des(7:9)+dx;
-            uu = quadController(state(:,ik),zeros(4,1),zeros(3,1),des,1,zeros(12,1));
+            [uu, validNum] = quadController(state(:,ik),zeros(4,1),zeros(3,1),des,1,zeros(12,1));
             uLoc = [uLoc uu];
+            if validNum<=numberOfSatSteps
+                validSetP=[validSetP ij];
+            end
             state(:,ik+1) = feval(Spur.fname,state(:,ik),uu,gameState.dt,zeros(nv,1));
         end
     else
@@ -64,6 +76,7 @@ for ij=1:nmodE
     state(:,1)=gameState.xEva;
     uLoc = [];
     if strcmp(gameState.discType,'overU')
+        validSetE=1:1:nmodE;
         for ik=1:gameState.kMax
             state(:,ik+1) = feval(Seva.fname,state(:,ik),Seva.uMat{ij}(:,ik),gameState.dt,zeros(nv,1));
             uLoc = [uLoc Seva.uMat{ij}(:,ik)];
@@ -73,8 +86,11 @@ for ij=1:nmodE
             dx = Seva.uMat{ij}(:,ik);
             des=state(:,ik);
             des(7:9)=des(7:9)+dx;
-            uu = quadController(state(:,ik),zeros(4,1),zeros(3,1),des,1,zeros(12,1));
+            [uu,validNum] = quadController(state(:,ik),zeros(4,1),zeros(3,1),des,1,zeros(12,1));
             uLoc = [uLoc uu];
+            if validNum<=numberOfSatSteps
+                validSetE=[validSetE ij];
+            end
             state(:,ik+1) = feval(Spur.fname,state(:,ik),uu,gameState.dt,zeros(nv,1));
         end
     else
@@ -86,13 +102,27 @@ end
 
 noiseCostPur=3409;
 noiseCostEva=3409;
-Jpur=zeros(nmodP,nmodE);
-Jeva=zeros(nmodP,nmodE);
-for iP=1:nmodP
-    for iE=1:nmodE
+nmodPvalid=length(validSetP);
+nmodEvalid=length(validSetE);
+Jpur=zeros(nmodPvalid,nmodEvalid);
+Jeva=zeros(nmodPvalid,nmodEvalid);
+for iPv=1:nmodPvalid
+    for iEv=1:nmodEvalid
+        iP=validSetP(iPv);
+        iE=validSetE(iEv);
+        fprintf('generating P/E: %d/%d \n',iP,iE);
         Jpur(iP,iE)=feval(Spur.Jname,xPurCell{iP},xEvaCell{iE},omegaRPur{iP},omegaREva{iE},Spur.Jparams);
         Jeva(iP,iE)=feval(Seva.Jname,xEvaCell{iE},xPurCell{iP},omegaREva{iE},omegaRPur{iP},Seva.Jparams);
     end
+end
+
+uOutPur={};
+uOutEva={};
+
+if (strcmp(gameState.discType,'overX'))
+    uOutPur=omegaRPur{validSetP};
+    uOutEva=omegaREva{validSetE};
+    
 end
 
 end

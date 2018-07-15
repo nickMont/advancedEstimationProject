@@ -52,7 +52,7 @@ else  %if there are equilibria and there are no errors
         end
         
         uniquePairs=(unique(pairs','rows'))';
-        [~,numUnique]=size(uniquePairs);
+        [~,numUnique]=size(uniquePairs)
         maxRD=zeros(1,numUnique);
         for i=1:numUnique
             indi = find(pairs(1,:)==uniquePairs(1,i) & pairs(2,:)==uniquePairs(2,i));

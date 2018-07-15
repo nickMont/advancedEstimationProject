@@ -1,6 +1,4 @@
-function omegaR = quadController(ewxv, omegaR_est, vwind_est, ewxv_des, mode, accel_vec, interr)
-j=get_active_quad();
-
+function [omegaR,ntries] = quadController(ewxv, omegaR_est, vwind_est, ewxv_des, mode, accel_vec, interr)
 int_errors=zeros(12,1);
 if nargin >= 7
     int_errors=interr;
@@ -33,20 +31,25 @@ theta=e(2);
 psi=e(3);
 
 
+m=1.5;
+I_rotor=.02;
+r_dis=1;
+r1loc = r_dis*unit_vector([1;1;0]);
+r2loc = r_dis*unit_vector([1;-1;0]);
+r3loc = r_dis*unit_vector([-1;-1;0]);
+r4loc = r_dis*unit_vector([-1;1;0]);
+rotor_loc=[r1loc r2loc r3loc r4loc];
+J=[.75 0 0
+   0 .80 0
+   0 0 1];
+cds=[.1;.1;.2];
 wdir=[1 -1 1 -1];
-[m_in, I_rotor_in, ~, rotor_loc_in, J_in, cds_in, ~,~,wdir_in,cls_in]=get_dimensions();
-m=m_in(j);
-I_rotor=I_rotor_in(j);
-rotor_loc=rotor_loc_in(:,:,j);
-J=J_in(:,:,j);
-cds=cds_in(:,j);
-wdir=wdir_in(:,j);
-cls=cls_in(:,j);
+cls=[.01;.01];
 
-cH=0*[1;1;1;1];
-cR=0*[1;1;1;1];
+cH=.001*[1;1;1;1];
+cR=.005*[1;1;1;1];
 cT=.1*[1;1;1;1];
-[~,~,~,kt_set]=get_Motor_Properties();
+kt_set=1.5;
 kT=kt_set*[1;1;1;1];
 g=9.81;
 
@@ -282,5 +285,9 @@ end
 
 omegaR=omegaRsquared.^0.5;
 
+if max(omegaR)<0.1
+    omegaRsquared=[9001;9001;9001;9001];
+end
+ntries=n;
 end
 

@@ -62,7 +62,9 @@ C_mat=C_mat_eval(e,wI,x,v,m,J);
 G_mat=[0;0;g;0;0;0];
 %Output M if not invertible
 if cond(WtJW)>=10^15
-    fprintft('M not precisely invertible')
+    fprintf('M not precisely invertible\n')
+    global errorFlag
+    errorFlag=true;
     WtJW=WtJW+.1*eye(3);
 end
 M_mat=[m*eye(3) zeros(3,3)
