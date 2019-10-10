@@ -9,15 +9,20 @@ clear;clc;
 %   +y - -
 %
 
-rngseedno=10;
+%rngseedno=10;
+rngseedno=40;
 rng(rngseedno)
 
 plotFlag=0;
+plotEndFlag=1;
+%npart=5000;
+npart=20;
 
 tstep=1;
 tmax=20;
 
-utemp=permn(-2:.5:2,2)';
+%utemp=permn(-2:.5:2,2)';
+utemp=permn(-2:1:2,2)';
 
 Game.uType="velstep";
 %Options: velstep (step of constant size, from velocity)
@@ -71,7 +76,6 @@ axis(axisveck)
 end
 
 %Particle filter initialization
-npart=5000;
 xPur_part=zeros(14,npart);
 for ij=1:npart
     xPur_part(1:8,ij)=xTrue+chol(Ppur)'*randn(8,1);
@@ -95,6 +99,16 @@ xPartStore{1}=xPur_part;
 xPurS{1}=xPur;
 xEvaS{1}=xEva;
 xTrueS{1}=xTrue;
+dJS=[];
+
+%initial dJ
+meann=zeros(14,1);
+wloc=1/npart*ones(npart,1);
+for ik=1:npart
+    meann=meann+wloc(ik)*xPur_part(:,ik);
+end
+dJ=meann(9:14)-qrTrue;
+dJS(:,1)=dJ;
 
 for ij=1:tstep:tmax
     n=n+1
@@ -150,6 +164,7 @@ for ij=1:tstep:tmax
     
     % Propagate particles
     for ik=1:npart
+        %ik
         gameState_p.xPur=xPur_part(1:4,ik);
         gameState_p.xEva=xPur_part(5:8,ik);
         Seva_p.Jparams.Q=diag(xPur_part(9:12,ik));
@@ -259,7 +274,8 @@ for ij=1:tstep:tmax
         meann=meann+wloc(ik)*xPur_part(:,ik);
     end
     %dx=xPur-meann(1:8)
-    dJ=meann(9:14)-qrTrue
+    dJ=meann(9:14)-qrTrue;
+    dJS(:,n+1)=dJ;
     
     % Recenter particles, not technically correct but I'm going to see if
     %   the performance improves
@@ -299,5 +315,18 @@ for ij=1:tstep:tmax
     tThisStep=toc
 end
 
-
-
+if plotEndFlag==1
+    figure(2);clf;
+    subplot(3,1,1);
+    plot(1:n+1,dJS(1,:));
+    hold on
+    plot(1:n+1,dJS(2,:));
+    subplot(3,1,2);
+    plot(1:n+1,dJS(3,:));
+    hold on
+    plot(1:n+1,dJS(4,:));
+    subplot(3,1,3);
+    plot(1:n+1,dJS(5,:));
+    hold on
+    plot(1:n+1,dJS(6,:));
+end
