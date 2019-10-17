@@ -16,13 +16,13 @@ rng(rngseedno)
 plotFlag=0;
 plotEndFlag=1;
 %npart=5000;
-npart=20;
+npart=500;
 
 tstep=1;
 tmax=20;
 
 %utemp=permn(-2:.5:2,2)';
-utemp=permn(-2:1:2,2)';
+utemp=permn(-2:0.5:2,2)';
 
 Game.uType="velstep";
 %Options: velstep (step of constant size, from velocity)
@@ -47,7 +47,7 @@ H14=[Hpur zeros(4,6)];
 
 dt=tstep;
 n=2; %n is dim(x)/2 so I can copy/paste dynamic functions
-Abk1=[eye(n) dt*eye(n); zeros(n,n) 0.3*eye(n)]; %Apur
+Abk1=[eye(n) dt*eye(n); zeros(n,n) 0.6*eye(n)]; %Apur
 Abk2=[eye(n) dt*eye(n); zeros(n,n) 0.3*eye(n)]; %Aeva
 Aeva=blkdiag(Abk1,Abk2);
 Gnoiseeva=blkdiag([eye(n)*dt^2/2;eye(n)*dt],[eye(n)*dt^2/2;eye(n)*dt]);
@@ -93,6 +93,7 @@ cholRexcite=0.05;
 % P to do thing
 cholExcitePlusOne=0.05;
 cholExciteDropOrder=0.00;
+orderExcite=0.5;
 
 wStore{1}=wloc;
 xPartStore{1}=xPur_part;
@@ -190,10 +191,13 @@ for ij=1:tstep:tmax
         xPur_part(9:12,ik)=diag(Seva_p.Jparams.Q).*10.^(cholQexcite*(rand(4,1)*2-1));
         xPur_part(13:14,ik)=diag(Seva_p.Jparams.Rself).*10.^(cholRexcite*(rand(2,1)*2-1));
         for iL=1:6
-            if(rand<=cholExcitePlusOne && xPur_part(8+iL,ik)<1e-8) %breaking out of zero
+            rn=rand;
+            if(rn<=cholExcitePlusOne && xPur_part(8+iL,ik)<1e-8) %breaking out of zero
                 xPur_part(8+iL,ik)=xPur_part(8+iL,ik)+1;
-            elseif (rand<=cholExciteDropOrder && xPur_part(8+iL,ik)>1e-8)
-                xPur_part(8+iL,ik)=xPur_part(8+iL,ik)*0.1;
+            elseif (rn<=cholExciteDropOrder && xPur_part(8+iL,ik)>1e-8)
+                xPur_part(8+iL,ik)=xPur_part(8+iL,ik)*10^-orderExcite;
+            elseif (rn<=2*cholExciteDropOrder)
+                xPur_part(8+iL,ik)=xPur_part(8+iL,ik)*10^orderExcite;
             end
             if xPur_part(8+iL,ik)>10^Qmax
                 xPur_part(8+iL,ik)=10^Qmax;
@@ -318,15 +322,43 @@ end
 if plotEndFlag==1
     figure(2);clf;
     subplot(3,1,1);
-    plot(1:n+1,dJS(1,:));
+    plot(1:n+1,dJS(1,:),'-.r');
     hold on
-    plot(1:n+1,dJS(2,:));
+    plot(1:n+1,dJS(2,:),'-ob');
+    legend('\DeltaQ_{xx}','\DeltaQ_{yy}')
+    xlabel('Time (s)');
+    ylabel('Cost parameter (m^{-2})');
+    figset
+    
     subplot(3,1,2);
-    plot(1:n+1,dJS(3,:));
+    plot(1:n+1,dJS(3,:),'-.r');
     hold on
-    plot(1:n+1,dJS(4,:));
+    plot(1:n+1,dJS(4,:),'-ob');
+    legend('\DeltaQ_{vx}','\DeltaQ_{vy}');
+    xlabel('Time (s)');
+    ylabel('Cost parameter (m^{-2}s^2)');
+    figset
+    
     subplot(3,1,3);
-    plot(1:n+1,dJS(5,:));
+    plot(1:n+1,dJS(5,:),'-.r');
     hold on
-    plot(1:n+1,dJS(6,:));
+    plot(1:n+1,dJS(6,:),'-ob');
+    legend('\DeltaR_{x}','\DeltaR_{y}');
+    xlabel('Time (s)');
+    ylabel('Cost parameter (m^{-2}s^4)');
+    figset
+    
+    xP=zeros(2,n+1);xE=zeros(2,n+1);
+    for ijk=1:n+1
+        xP(:,ijk)=xTrueS{ijk}(1:2); xE(:,ijk)=xTrueS{ijk}(5:6);
+    end
+    figure(3);clf;
+    plot(xP(1,:),xP(2,:),'-xr');
+    hold on
+    plot(xE(1,:),xE(2,:),'-ob');
+    xlabel('East displacement (m)');
+    ylabel('North displacement (m)');
+    legend('Pursuer','Evader');
+    figset
+    
 end
