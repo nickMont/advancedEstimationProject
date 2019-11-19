@@ -18,15 +18,24 @@ plotEndFlag=1;
 %npart=5000;
 npart=500;
 
+evaderIsOblivious=false;
+pursuerUsesVelmatch=false;
+%Will velmatching use a control estimate?
+%uEvaBestPerformanceEstimate=[0.9;0]; %lower can produce oscillations
+uEvaBestPerformanceEstimate=[0;0]; 
+
 tstep=1;
 tmax=20;
 
 %utemp=permn(-2:.5:2,2)';
 %utemp=permn(-2:0.5:2,2)';
-utemp=permn(-1:0.2:1,2)';
+utemp=permn(-1:0.1:1,2)';
 upmax=2;
 utype.radius=upmax;
 utemp=mapUtempToUvec(utemp,"circle",utype);
+
+%Evader initial travel direction if unaware
+traveldirEva=[1;0]; traveldirEva=traveldirEva/norm(traveldirEva);
 
 Game.uType="velstep";
 %Options: velstep (step of constant size, from velocity)
@@ -66,7 +75,7 @@ Ppur=Peva;
 
 %This can be shunted off to a separate function
 n=0; %n is now the iteration index (yes, misuse of var names)
-xTrue=[[0 0 2.2 0.8]'; [4 6 0 0]'];
+xTrue=[[0 0 1.0 0.8]'; [10 4 0 0]'];
 xPur=xTrue;
 xEva=xTrue;
 axisveck=[-20 20 -5 35];
@@ -105,6 +114,7 @@ xPurS{1}=xPur;
 xEvaS{1}=xEva;
 xTrueS{1}=xTrue;
 dJS=[];
+Jp0=0;
 
 %initial dJ
 meann=zeros(14,1);
@@ -125,12 +135,13 @@ for ij=1:tstep:tmax
     
     xPurMean=[xPur;diag(Qeva);diag(Reva)];
     
-    % Guessing pursuer
+    %Preload GT params used in one or more GT solvers
     gameState_p.xPur=xPurMean(1:4);
     gameState_p.xEva=xPurMean(5:8);
     gameState_p.dt=tstep;
     gameState_p.kMax=1;
     gameState_p.nu=2;
+    uvelmatch=vmRGVO_max(xPur(1:4),xPur(5:8),upmax,2,tstep,uEvaBestPerformanceEstimate);
     for ik=1:length(utemp)
         Spur_p.uMat{ik}=utemp(:,ik);
     end
@@ -140,27 +151,56 @@ for ij=1:tstep:tmax
     Spur_p.Jparams.Rself=Rpur;
     Spur_p.Jparams.Ropp=zeros(2,2);
     Seva_p.uMat = Spur_p.uMat;
+    Spur_p.uMat{length(utemp)+1}=uvelmatch;
     Seva_p.Jname='J_eva';
     Seva_p.fname='f_dynEva';
     Seva_p.Jparams.Q=diag(xPurMean(9:12));
     Seva_p.Jparams.Rself=diag(xPurMean(13:14));
     Seva_p.Jparams.Ropp=zeros(2,2);
-    % Propagate to next time step
-    [up,ue,flag]=f_dyn(Spur_p,Seva_p,gameState_p,zeros(4,1));
-    if flag==0
-        upp=randsample(1:length(Spur_p.uMat),1,true,up);
-        uPurTrue=Spur_p.uMat{upp}(:,1);
-        uEvaEst=zeros(gameState_p.nu,gameState_p.kMax);
-        for ik=1:length(Seva_p.uMat)
-            uEvaEst=uEvaEst+ue(ik)*Seva_p.uMat{ik}(:,1);
-        end
-        QinflatePur=Qnoisepur+blkdiag(zer2,1*eye2);
+    
+    if pursuerUsesVelmatch
+        uPurTrue=uvelmatch;
+        uEvaEst=zeros(2,1);
     else
-        uPurTrue=up;
-        uEvaEst=ue;
+        % Guessing pursuer
+        gameState_p.xPur=xPurMean(1:4);
+        gameState_p.xEva=xPurMean(5:8);
+        gameState_p.dt=tstep;
+        gameState_p.kMax=1;
+        gameState_p.nu=2;
+        for ik=1:length(utemp)
+            Spur_p.uMat{ik}=utemp(:,ik);
+        end
+        Spur_p.Jname='J_pur';
+        Spur_p.fname='f_dynPur';
+        Spur_p.Jparams.Q=Qpur;
+        Spur_p.Jparams.Rself=Rpur;
+        Spur_p.Jparams.Ropp=zeros(2,2);
+        Seva_p.uMat = Spur_p.uMat;
+        Spur_p.uMat{length(utemp)+1}=uvelmatch;
+        Seva_p.Jname='J_eva';
+        Seva_p.fname='f_dynEva';
+        Seva_p.Jparams.Q=diag(xPurMean(9:12));
+        Seva_p.Jparams.Rself=diag(xPurMean(13:14));
+        Seva_p.Jparams.Ropp=zeros(2,2);
+        % Propagate to next time step
+        [up,ue,flag]=f_dyn(Spur_p,Seva_p,gameState_p,zeros(4,1));
+        if flag==0
+            upp=randsample(1:length(Spur_p.uMat),1,true,up);
+            uPurTrue=Spur_p.uMat{upp}(:,1);
+            uEvaEst=zeros(gameState_p.nu,gameState_p.kMax);
+            for ik=1:length(Seva_p.uMat)
+                uEvaEst=uEvaEst+ue(ik)*Seva_p.uMat{ik}(:,1);
+            end
+            QinflatePur=Qnoisepur+blkdiag(zer2,1*eye2);
+        else
+            uPurTrue=up;
+            uEvaEst=ue;
+        end
     end
     xPur_bar(1:4)=f_dynPur(xPurMean(1:4),uPurTrue,tstep,zeros(2,1));
     xPur_bar(5:8)=f_dynEva(xPurMean(5:8),uEvaEst ,tstep,zeros(2,1));
+    
     
     %Omniscient evader
     gameState_e.xPur=xEva(1:4);
@@ -185,18 +225,23 @@ for ij=1:tstep:tmax
     gameState_e = gameState_p;
     gameState_e.xPur=xEva(1:4);
     gameState_e.xEva=xEva(5:8);
-    [up,ue,flag]=f_dyn(Spur_e,Seva_e,gameState_e,zeros(4,1));
-    if flag==0
-        uee=randsample(1:length(Seva_e.uMat),1,true,ue);
-        uEvaTrue=Seva_e.uMat{uee}(:,1);
-        uPurEst=zeros(gameState_p.nu,gameState_p.kMax);
-        for ik=1:length(Spur_e.uMat)
-            uPurEst=uPurEst+up(ik)*Spur_e.uMat{ik}(:,1);
-        end
-        QinflateEva=Qnoiseeva+blkdiag(1*eye2, zer2);
+    if evaderIsOblivious
+        uPurEst=zeros(2,1);
+        uEvaTrue=upmax/3*traveldirEva;
     else
-        uEvaTrue=ue;
-        uPurEst=up;
+        [up,ue,flag]=f_dyn(Spur_e,Seva_e,gameState_e,zeros(4,1));
+        if flag==0
+            uee=randsample(1:length(Seva_e.uMat),1,true,ue);
+            uEvaTrue=Seva_e.uMat{uee}(:,1);
+            uPurEst=zeros(gameState_p.nu,gameState_p.kMax);
+            for ik=1:length(Spur_e.uMat)
+                uPurEst=uPurEst+up(ik)*Spur_e.uMat{ik}(:,1);
+            end
+            QinflateEva=Qnoiseeva+blkdiag(1*eye2, zer2);
+        else
+            uEvaTrue=ue;
+            uPurEst=up;
+        end
     end
     
     xTrue(1:4)=f_dynPur(xTrue(1:4),uPurTrue(:,1),tstep,zeros(2,1));
@@ -208,7 +253,13 @@ for ij=1:tstep:tmax
     
     [xPur,Ppur]=kfstep(xPur,zPur,Aeva,Bnoiseeva,[uPurTrue;uEvaEst],Gnoiseeva,QinflatePur,Ppur,Heva,Rnoiseeva);
     [xEva,Peva]=kfstep(xEva,zEva,Aeva,Bnoiseeva,[uPurEst;uEvaTrue],Gnoiseeva,QinflateEva,Peva,Heva,Rnoisepur);
+    xTrueS{n+1}=xTrue;
     
+    %cost calculation, need to debug error index length in J_pur
+    e=xTrue(1:4)-xTrue(5:8);
+    Jloc = e'*Spur_p.Jparams.Q*e + uPurTrue'*Spur_p.Jparams.Rself*uPurTrue + ...
+        uEvaTrue'*Spur_p.Jparams.Ropp*uEvaTrue;
+    Jp0=Jp0+Jloc;
     
     if plotFlag==1
     figure(1)
@@ -223,7 +274,7 @@ for ij=1:tstep:tmax
     tThisStep=toc
 end
 
-% if plotEndFlag==1
+if plotEndFlag==1
 %     figure(2);clf;
 %     subplot(3,1,1);
 %     plot(1:n+1,dJS(1,:),'-.r');
@@ -251,18 +302,20 @@ end
 %     xlabel('Time (s)');
 %     ylabel('Cost parameter (m^{-2}s^4)');
 %     figset
-%     
-%     xP=zeros(2,n+1);xE=zeros(2,n+1);
-%     for ijk=1:n+1
-%         xP(:,ijk)=xTrueS{ijk}(1:2); xE(:,ijk)=xTrueS{ijk}(5:6);
-%     end
-%     figure(3);clf;
-%     plot(xP(1,:),xP(2,:),'-xr');
-%     hold on
-%     plot(xE(1,:),xE(2,:),'-ob');
-%     xlabel('East displacement (m)');
-%     ylabel('North displacement (m)');
-%     legend('Pursuer','Evader');
-%     figset
-%     
-% end
+    
+    xP=zeros(2,n+1);xE=zeros(2,n+1);
+    for ijk=1:n+1
+        xP(:,ijk)=xTrueS{ijk}(1:2); xE(:,ijk)=xTrueS{ijk}(5:6);
+    end
+    figure(3);clf;
+    plot(xP(1,:),xP(2,:),'-xr');
+    hold on
+    plot(xE(1,:),xE(2,:),'-ob');
+    title('Interceptor using velocity matching vs unaware evader');
+    xlabel('East displacement (m)');
+    ylabel('North displacement (m)');
+    legend('Pursuer','Evader');
+    axis([0 90 0 10])
+    figset
+    
+end
