@@ -1,4 +1,4 @@
-function qVecDot = odeKumarP(t,pVec,Q,gameStateVals)
+function pVecDot = odeKumarP(t,pVec,Qvals,Qtimes,gameStateVals)
 %Q contains Q.times, Q.values.  Q.times is nTx1, Q.values is nTxnP
 
 %Unpack stuff
@@ -13,6 +13,8 @@ R22=gameStateVals.R22;
 F=gameStateVals.F;
 G1=gameStateVals.G1;
 G2=gameStateVals.G2;
+H1=gameStateVals.H1;
+H2=gameStateVals.H2;
 
 %Repackage qVec
 p1Vec=pVec(1:1*nX^2);
@@ -29,7 +31,7 @@ invR1=inv(R11);
 invR2=inv(R22);
 
 %Interpolate P, linear interpolation
-Qq=(interp1(Q.times,Q.values',t))';
+Qq=(interp1(Qtimes,Qvals',t))';
 Q1f=Qq(1:1*nX^2);
 Q2f=Qq(1*nX^2+1:2*nX^2);
 Q3f=Qq(2*nX^2+1:3*nX^2);
