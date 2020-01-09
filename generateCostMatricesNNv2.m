@@ -152,8 +152,8 @@ Jpur=zeros(nmodP,nmodE);
 Jeva=zeros(nmodP,nmodE);
 for iP=1:nmodP
     for iE=1:nmodE
-        Jpur(iP,iE)=feval(Spur.Jname,xPurCell{iP},xEvaCell{iE},Spur.uMat{iP},Seva.uMat{iE},Spur.Jparams);
-        Jeva(iP,iE)=feval(Seva.Jname,xEvaCell{iE},xPurCell{iP},Seva.uMat{iE},Spur.uMat{iP},Seva.Jparams);
+        Jpur(iP,iE)=feval(Spur.Jname,xPurCell{iP},xEvaCell{iE},Spur.uMat{iP},Seva.uMat{iE},Spur.Jparams,gameState);
+        Jeva(iP,iE)=feval(Seva.Jname,xPurCell{iP},xEvaCell{iE},Seva.uMat{iE},Spur.uMat{iP},Seva.Jparams,gameState);
     end
 end
 
