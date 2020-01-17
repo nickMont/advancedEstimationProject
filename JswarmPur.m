@@ -4,7 +4,7 @@ function J = JswarmPur(xPurCell,xEvaCell,uMatP,uMatE,Jparams,gameState,inactiveS
 
 J=0;
 %Reserve reward
-J=J-inactiveSetP*Jparams.reserveRewardWeight;
+J=J-inactiveSetP*Jparams.reserveRewardWeightPur;
 nx=gameState.nx;
 nv=nx/2;
 
@@ -29,7 +29,7 @@ for ik=1:gameState.tmax
             end
             closestActivePur=xPurCell(:,mindex,ik+1);
             dx=closestActivePur-thisEvaX;
-            J=J+dx'*Jparams.Qx(:,:,iE)*dx;
+            J=J+dx'*Jparams.QxPur(:,:,iE)*dx;
         end
     end
     
@@ -55,6 +55,7 @@ for iE=1:gameState.numE
         J=J+Jparams.targetCost{targetIndex}*targetWeight;
     end
 end
+
 
 end
 

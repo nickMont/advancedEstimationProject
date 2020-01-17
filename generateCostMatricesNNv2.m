@@ -46,8 +46,8 @@ uMat = zeros(nu,numP+numE,gameState.kMax+1);
 xPurCell = cell(nmodP);
 xEvaCell = cell(nmodE);
 
-[xPurCell, uMatCellP] = generateStateMatFromPairings(pairingsP,Spur,Seva,gameState,network1,network2);
-[xEvaCell, uMatCellE] = generateStateMatFromPairings(pairingsE,Spur,Seva,gameState,network1,network2);
+[xPurCell, uMatCellP] = generateStateMatFromPairings(pairingsP,Spur,Seva,gameState,network1,network2,inactiveSets);
+[xEvaCell, uMatCellE] = generateStateMatFromPairings(pairingsE,Spur,Seva,gameState,network1,network2,inactiveSets);
 % for ij=1:nmodP
 %     nP=size(pairingsP{ij});
 %     for iL=1:nP
@@ -152,8 +152,12 @@ Jpur=zeros(nmodP,nmodE);
 Jeva=zeros(nmodP,nmodE);
 for iP=1:nmodP
     for iE=1:nmodE
-        Jpur(iP,iE)=feval(Spur.Jname,xPurCell{iP},xEvaCell{iE},Spur.uMat{iP},Seva.uMat{iE},Spur.Jparams,gameState);
-        Jeva(iP,iE)=feval(Seva.Jname,xPurCell{iP},xEvaCell{iE},Seva.uMat{iE},Spur.uMat{iP},Seva.Jparams,gameState);
+        inactiveSetP=gameState.inactiveSetP(iP,:);
+        inactiveSetP=inactiveSetP(inactiveSetP(:)~=0);
+        inactiveSetE=gameState.inactiveSetE(iE,:);
+        inactiveSetE=inactiveSetE(inactiveSetE(:)~=0);
+        Jpur(iP,iE)=feval(Spur.Jname,xPurCell{iP},xEvaCell{iE},Spur.uMat{iP},Seva.uMat{iE},Spur.Jparams,gameState,inactiveSetP,inactiveSetE);
+        Jeva(iP,iE)=feval(Seva.Jname,xPurCell{iP},xEvaCell{iE},Seva.uMat{iE},Spur.uMat{iP},Seva.Jparams,gameState,inactiveSetP,inactiveSetE);
     end
 end
 

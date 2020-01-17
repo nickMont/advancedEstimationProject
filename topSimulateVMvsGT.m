@@ -1,5 +1,5 @@
 clear;clc;
-% Main function for 2D game AI for pop-the-balloon
+% Main function for 2D game
 
 %
 % Game state convention
@@ -12,6 +12,10 @@ clear;clc;
 %rngseedno=10;
 rngseedno=40;
 rng(rngseedno)
+
+numEvaders=3;
+numPursuers=3;
+
 
 plotFlag=0;
 plotEndFlag=1;
@@ -88,18 +92,6 @@ f2=scatter(xTrue(5),xTrue(6),'r');
 axis(axisveck)
 end
 
-%Particle filter initialization
-xPur_part=zeros(14,npart);
-for ij=1:npart
-    xPur_part(1:8,ij)=xTrue+chol(Ppur)'*randn(8,1);
-end
-Qmax = 2.5; %10^order
-Qmin = 0.8;
-xPur_part(9:14,:)=randpe(6,npart,0.35,Qmin,Qmax);
-xbarprev=mean(xPur_part,2);
-w_set_pf=1/npart*ones(npart,1);
-wloc=w_set_pf;
-
 % Scaling on excitation for Jparams
 cholQexcite=0.05;
 cholRexcite=0.05;
@@ -113,17 +105,14 @@ xPartStore{1}=xPur_part;
 xPurS{1}=xPur;
 xEvaS{1}=xEva;
 xTrueS{1}=xTrue;
-dJS=[];
-Jp0=0;
 
-%initial dJ
-meann=zeros(14,1);
-wloc=1/npart*ones(npart,1);
-for ik=1:npart
-    meann=meann+wloc(ik)*xPur_part(:,ik);
-end
-dJ=meann(9:14)-qrTrue;
-dJS(:,1)=dJ;
+evaderVec=1:numEvaders;
+pursuerVec=1:numPursuers;
+evaderVec=[evaderVec 0];
+pursuerVec=[pursuerVec 0)];
+
+
+
 
 for ij=1:tstep:tmax
     n=n+1
