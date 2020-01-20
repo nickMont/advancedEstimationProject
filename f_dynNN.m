@@ -1,11 +1,11 @@
-function [uPurIndex,uEvaIndex,outputflag,uPmat,uEmat] = f_dynNN(Spur,Seva,gameState,vk)
+function [uPurIndex,uEvaIndex,outputflag,uPmat,uEmat] = f_dynNN(Spur,Seva,gameState,vk,network1,network2)
 if nargin<=3
     vk=zeros(100,1);
 end
 lenv=floor(length(vk)/2);
 
 %Generate cost matrices
-[Cpur,Ceva,uPmat,uEmat]=generateCostMatrices(Spur,Seva,gameState);
+[Cpur,Ceva,uPmat,uEmat]=generateCostMatricesNNv2(Spur,Seva,gameState,network1,network2);
 
 %aa=LH2(-Cpur,-Ceva)
 %lhPur=aa{1}
@@ -33,8 +33,8 @@ if flag==0 %if no unique solution, run LH2 and take E(u) for result
 else %unique solution found
     up_index=rdeq(1,1);
     ue_index=rdeq(2,1);
-    uPurIndex=Spur.uMat{up_index};
-    uEvaIndex=Seva.uMat{ue_index};
+    uPurIndex=up_index;
+    uEvaIndex=ue_index;
 end
 
 %xkp1_pur = f_dynPur(gameState.xPur,uPur,gameState.dt,vk(1:lenv));
