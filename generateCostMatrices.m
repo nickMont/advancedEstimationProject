@@ -31,7 +31,11 @@ xPurCell = cell(nmodP);
 for ij=1:nmodP
     state(:,1)=gameState.xPur;
     for ik=1:gameState.kMax
-        state(:,ik+1) = feval(Spur.fname,state(:,ik),Spur.uMat{ij}(:,ik),gameState.dt,zeros(nv,1));
+        if isfield(Spur,'params')
+            state(:,ik+1) = feval(Spur.fname,state(:,ik),Spur.uMat{ij}(:,ik),gameState.dt,zeros(nv,1),Spur.params);
+        else
+            state(:,ik+1) = feval(Spur.fname,state(:,ik),Spur.uMat{ij}(:,ik),gameState.dt,zeros(nv,1));
+        end
     end
     xPurCell{ij} = state;
 end
@@ -42,7 +46,11 @@ xEvaCell = cell(nmodE);
 for ij=1:nmodE
     state(:,1)=gameState.xEva;
     for ik=1:gameState.kMax
-        state(:,ik+1) = feval(Seva.fname,state(:,ik),Seva.uMat{ij}(:,ik),gameState.dt,zeros(nv,1));
+        if isfield(Seva,'params')
+            state(:,ik+1) = feval(Seva.fname,state(:,ik),Seva.uMat{ij}(:,ik),gameState.dt,zeros(nv,1),Seva.params);
+        else
+            state(:,ik+1) = feval(Seva.fname,state(:,ik),Seva.uMat{ij}(:,ik),gameState.dt,zeros(nv,1));
+        end
     end
     xEvaCell{ij} = state;
 end

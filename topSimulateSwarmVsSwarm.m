@@ -9,19 +9,21 @@ clear;clc;
 %   +y - -
 %
 
-%rngseedno=10;
+%rngseedno=40;
 rngseedno=40;
 rng(rngseedno)
 
 plotFlag=0;
 plotEndFlag=1;
 
-nPur=3;
-nEva=3;
+nPur=4;
+nEva=4;
 nTargets=2;
 
 tstep=1;
 tmax=20;
+
+flagUseVelmatchInsteadOfGT=false;
 
 
 %load NN here
@@ -99,12 +101,12 @@ n=0; %n is now the iteration index (yes, misuse of var names)
 %xTrue=[[0 0 1.0 0.8]'; [10 4 0 0]'];
 targetIndex={};
 for ij=1:nPur
-    xPur{ij}=[10*rand(2,1);0;0];
+    xPur{ij}=[0;0;0;0]+[2*rand(2,1);0;0];
     Spur_p.fname{ij}=purDynamics;
     Spur_e.fname{ij}=purDynamics;
 end
 for ik=1:nEva
-    xEva{ik}=[10*rand(2,1);0;0];
+    xEva{ik}=[5;5;0;0]+[2*rand(2,1);0;0];
     Seva_p.fname{ik}=evaDynamics;
     Seva_e.fname{ik}=evaDynamics;
     targetIndex{ik}=floor(2*rand)+1;
@@ -121,6 +123,7 @@ maxDistToPenalize=5;
 axisveck=[-5 15 -5 15];
 xTrue{1,1}=xPur;
 xTrue{1,2}=xEva;
+xTrueS{1,1}=xTrue;
 
 gameStateValsEva.nx=4;
 gameStateValsPur.nx=4;
@@ -132,23 +135,6 @@ hold on
 f2=scatter(xTrue(5),xTrue(6),'r');
 axis(axisveck)
 end
-
-% wStore{1}=wloc;
-% xPartStore{1}=xPur_part;
-% xPurS{1}=xPur;
-% xEvaS{1}=xEva;
-% xTrueS{1}=xTrue;
-% dJS=[];
-% Jp0=0;
-
-% %initial dJ
-% meann=zeros(14,1);
-% wloc=1/npart*ones(npart,1);
-% for ik=1:npart
-%     meann=meann+wloc(ik)*xPur_part(:,ik);
-% end
-% dJ=meann(9:14)-qrTrue;
-% dJS(:,1)=dJ;
 
 for ij=1:tstep:tmax
     n=n+1
@@ -182,6 +168,7 @@ for ij=1:tstep:tmax
     Spur_p.Jparams.Rpur=Rp;
     Spur_p.pairings=pairings;
     Spur_p.Jparams.targetCost=targetCost;
+    Spur_p.umaxP=umax;
     Seva_p.pairings=pairings;
     Seva_p.Jname='JswarmEva';
     Seva_p.Jparams.QxEva=QxEva;
@@ -189,6 +176,7 @@ for ij=1:tstep:tmax
     Seva_p.Jparams.Ropp=zeros(2,2);
     Seva_p.Jparams.targetValue=targetValue;
     Seva_p.Jparams.reserveRewardWeightEva=VreserveE;
+    Seva_p.umaxE=umax;
     [upPairs_p,uePairs_e,flag,upMat,ueMat]=f_dynNN(Spur_p,Seva_p,gameState_p,zeros(4,1),network1,network2);
     if flag==1
         for iP=1:nPur
@@ -198,6 +186,32 @@ for ij=1:tstep:tmax
         pair=randsample(1:length(upPairs_p),1,true,upPairs_p);
         for iP=1:nPur
             uPur{iP}=upMat{pair}(:,iP);
+        end
+    end
+%     for derp=1:nPur
+%         uPur{derp}
+%     end
+    %
+    if true==flagUseVelmatchInsteadOfGT
+        [a,b]=size(pairings);
+        Jvec=zeros(a,1);
+        paramsVM.xP=xPur;
+        paramsVM.xE=xEva;
+        paramsVM.nPur=numP;
+        paramsVM.nEva=numE;
+        paramsVM.nx=2;
+        for ik=1:a
+            Jvec(ij)=minpair(pairings(ij,:),paramsVM);
+        end
+        [minval,mindex]=min(Jvec);
+        vmPair=pairings(mindex,:);
+        for ik=1:numP
+            if ismember(ik,vmPair)
+                tp=vmPair(2*ik-1:2*ik);
+                uPur{ik} = vmRGVO_max(xPur{tp(1)},xEva{tp(2)},upmax,nx,gameState_p.dt,zeros(2,1));
+            else
+                uPur{ik}=zeros(2,1);
+            end
         end
     end
     
@@ -213,6 +227,7 @@ for ij=1:tstep:tmax
     Spur_e.Jparams.Rpur=Rp;
     Spur_e.Jparams.Ropp=zeros(2,2);
     Spur_e.pairings=pairings;
+    Spur_e.umaxP=umax;
     Seva_e.Jparams.targetValue=targetValue;
     Seva_e.Jname='JswarmEva';
     Spur_e.Jparams.reserveRewardWeightPur=VreserveP;
@@ -221,6 +236,7 @@ for ij=1:tstep:tmax
     Seva_e.pairings=pairings;
     Seva_e.Jparams.Reva=Re;
     Seva_e.Jparams.Ropp=zeros(2,2);
+    Seva_e.umaxE=umax;
     gameState_e = gameState_p;
     [upPairs_e,uePairs_e,flag,upMat,ueMat]=f_dynNN(Spur_e,Seva_e,gameState_e,zeros(4,1),network1,network2);
     if flag==1
@@ -253,8 +269,8 @@ for ij=1:tstep:tmax
 %     if evaderUsesGT
 %         [xEva,Peva]=kfstep(xEva,zEva,Aeva,Bnoiseeva,[uPurEst;uEvaTrue],Gnoiseeva,QinflateEva,Peva,Heva,Rnoisepur);
 %     end
-    xTrue{n+1,1}=xPur;
-    xTrue{n+2,2}=xEva;
+    xTrue{1,1}=xPur;
+    xTrue{1,2}=xEva;
     xTrueS{n+1}=xTrue;
     
 %     %cost calculation, need to debug error index length in J_pur
@@ -276,48 +292,5 @@ for ij=1:tstep:tmax
     tThisStep=toc
 end
 
-if plotEndFlag==1
-%     figure(2);clf;
-%     subplot(3,1,1);
-%     plot(1:n+1,dJS(1,:),'-.r');
-%     hold on
-%     plot(1:n+1,dJS(2,:),'-ob');
-%     legend('\DeltaQ_{xx}','\DeltaQ_{yy}')
-%     xlabel('Time (s)');
-%     ylabel('Cost parameter (m^{-2})');
-%     figset
-%     
-%     subplot(3,1,2);
-%     plot(1:n+1,dJS(3,:),'-.r');
-%     hold on
-%     plot(1:n+1,dJS(4,:),'-ob');
-%     legend('\DeltaQ_{vx}','\DeltaQ_{vy}');
-%     xlabel('Time (s)');
-%     ylabel('Cost parameter (m^{-2}s^2)');
-%     figset
-%     
-%     subplot(3,1,3);
-%     plot(1:n+1,dJS(5,:),'-.r');
-%     hold on
-%     plot(1:n+1,dJS(6,:),'-ob');
-%     legend('\DeltaR_{x}','\DeltaR_{y}');
-%     xlabel('Time (s)');
-%     ylabel('Cost parameter (m^{-2}s^4)');
-%     figset
-%     
-%     xP=zeros(2,n+1);xE=zeros(2,n+1);
-%     for ijk=1:n+1
-%         xP(:,ijk)=xTrueS{ijk}(1:2); xE(:,ijk)=xTrueS{ijk}(5:6);
-%     end
-%     figure(3);clf;
-%     plot(xP(1,:),xP(2,:),'-xr');
-%     hold on
-%     plot(xE(1,:),xE(2,:),'-ob');
-%     title('Interceptor using velocity matching vs unaware evader');
-%     xlabel('East displacement (m)');
-%     ylabel('North displacement (m)');
-%     legend('Pursuer','Evader');
-%     axis([0 90 0 10])
-%     figset
-    
-end
+scratchPlot
+
