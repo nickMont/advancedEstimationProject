@@ -1,13 +1,18 @@
 clear;clc;
-% Main function for 2D game AI for pop-the-balloon
 
-%
 % Game state convention
 %        +x
 %         |
 %         |
 %   +y - -
 %
+
+%GT: J=8.6390e+04
+%VM: J=1.1371e+05 (@0.8 TF)
+%NN: J=
+
+load nn1v1.mat
+network1=net;
 
 %rngseedno=10;
 rngseedno=40;
@@ -18,15 +23,18 @@ plotEndFlag=1;
 %npart=5000;
 npart=500;
 
+% REWRITE CONTROL TYPE CODE
 %Evader control type info
 evaderIsOblivious=false; %if true, evader uses preset control
-evaderUsesGT=false;
-evaderUsesKumar=true;
+evaderUsesGT=true;
+evaderUsesKumar=false;
 
 %Pursuer control type info
 pursuerUsesVelmatch=false;
-pursuerUsesGT=false;
-pursuerUsesKumar=true;
+pursuerUsesGT=true;
+pursuerUsesKumar=false;
+useNNforGT=true;
+safeDecelParamVM=0.8; %percentage of throttle to dedicate to excess thrust
 
 %Will velmatching use a control estimate?
 %uEvaBestPerformanceEstimate=[0.9;0]; %lower can produce oscillations
@@ -54,7 +62,7 @@ Game.dt=tstep;
 % Red and blue teams, Sred and Sblue
 % S contains state information
 
-Qpur = diag([100 100 0 0]); Rpur = diag([0.1 1]);
+Qpur = diag([100 100 0 0]); Rpur = diag([100 100]);
 Qeva = diag([100 50 0 0]); Reva = diag([5 10]);
 
 qrTrue=[diag(Qeva);diag(Reva)];
@@ -214,7 +222,7 @@ for ij=1:tstep:tmax
     gameState_p.dt=tstep;
     gameState_p.kMax=1;
     gameState_p.nu=2;
-    uvelmatch=vmRGVO_max(xPur(1:4),xPur(5:8),upmax,2,tstep,uEvaBestPerformanceEstimate);
+    uvelmatch=vmRGVO_tune(xPur(1:4),xPur(5:8),upmax,2,tstep,uEvaBestPerformanceEstimate,safeDecelParamVM);
     for ik=1:length(utemp)
         Spur_p.uMat{ik}=utemp(:,ik);
     end
@@ -238,9 +246,10 @@ for ij=1:tstep:tmax
         if useNNforGT
             qqrr=0.1*[diag(Qpur); diag(Qeva); diag(Rpur); diag(Reva)];
             ministate=xPurMean;
-            uStack=predict(network1,[ministate;qqrr]);
-            uPurTrue=uStack(1:2);
-            uEvaEst=uStack(3:4);
+            uStack=predict(network1,[xPur;qqrr]);
+            uStack=double(uStack);
+            uPurTrue=uStack(1:2)';
+            uEvaEst=uStack(3:4)';
         else
             % Guessing pursuer
             gameState_p.xPur=xPurMean(1:4);
@@ -310,7 +319,7 @@ for ij=1:tstep:tmax
         gameState_e.xEva=xEva(5:8);
         if evaderIsOblivious
             uPurEst=zeros(2,1);
-            uEvaTrue=upmax/3*traveldirEva;
+            uEvaTrue=upmax/3*traveldirEva; %uemax=upmax
         else
             [up,ue,flag]=f_dyn(Spur_e,Seva_e,gameState_e,zeros(4,1));
             if flag==0
@@ -327,6 +336,7 @@ for ij=1:tstep:tmax
             end
         end
     end
+    uEvaTrue;
     
     if pursuerUsesGT || pursuerUsesVelmatch
         xTrue(1:4)=f_dynPur(xTrue(1:4),uPurTrue(:,1),tstep,zeros(2,1));
@@ -357,11 +367,11 @@ for ij=1:tstep:tmax
     end
     xTrueS{n+1}=xTrue;
     
-%     %cost calculation, need to debug error index length in J_pur
-%     e=xTrue(1:4)-xTrue(5:8);
-%     Jloc = e'*Spur_p.Jparams.Q*e + uPurTrue'*Spur_p.Jparams.Rself*uPurTrue + ...
-%         uEvaTrue'*Spur_p.Jparams.Ropp*uEvaTrue;
-%     Jp0=Jp0+Jloc;
+    %cost calculation, need to debug error index length in J_pur
+    e=xTrue(1:4)-xTrue(5:8);
+    Jloc = e'*Spur_p.Jparams.Q*e + uPurTrue'*Spur_p.Jparams.Rself*uPurTrue + ...
+        uEvaTrue'*Spur_p.Jparams.Ropp*uEvaTrue;
+    Jp0=Jp0+Jloc
     
     if plotFlag==1
     figure(1)
