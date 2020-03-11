@@ -136,6 +136,7 @@ gameStateValsPur.umax=umax;
 Pvec0Pur=repmat(reshape(Qnoiseeva+Qnoisepur,[16,1]),[3 2]);
 Qvec0Pur= -[[reshape(Qpur, [16 1]); reshape(Qeva, [16,1]); zeros(32,1)] [reshape(Qpur, [16 1]); reshape(Qeva, [16,1]); zeros(32,1)]];
 
+if evaderUsesKumar || pursuerUsesKumar
 tvec0pPur=[0 tstep]; tvec0pEva=[0 tstep];
 tvec0qPur=[tstep 0]; tvec0qEva=[tstep 0];
 for ik=1:3 %fwd/bwd pass three times
@@ -159,6 +160,7 @@ for ik=1:3 %fwd/bwd pass three times
     [tvec0qEva,Qvec0Eva]=ode45(propagateQ_Eva,[tstep 0],Qvec0Eva(:,1));
     Qvec0Eva=Qvec0Eva';
     %NOTE: CHECK THAT OUTPUTS ARE IN THE RIGHT TIME SERIES ORDER
+end
 end
 
 if plotFlag==1
