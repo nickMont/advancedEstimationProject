@@ -8,11 +8,15 @@ clear;clc;
 %   +y - -
 %
 
+load nnvarDynTrained0417.mat
+network1=net;
+testNN=true;
+
 iter=100;
 
-ueS_S=cell(iter);
-upS_S=cell(iter);
-xtrueS_S=cell(iter);
+ueS_S=cell(iter,1);
+upS_S=cell(iter,1);
+xtrueS_S=cell(iter,1);
 qrS_S=cell(iter,1);
 
 %rngseedno=457;
@@ -77,7 +81,8 @@ Ppur=Peva;
 %This can be shunted off to a separate function
 n=0; %n is now the iteration index (yes, misuse of var names)
 %xTrue=[[0 0 2.2 0.8]'; [4 6 0 0]'];
-xTrue = diag([4 4 0.5 0.5 4 4 0.5 0.5])*rand(8,1);
+xTrue = diag([20 20 0.5 0.5 20 20 0.5 0.5])*(2*rand(8,1)-1);
+xTrue = diag([4 4 .5 .5 4 4 .5 .5])*rand(8,1);
 xPur=xTrue;
 xEva=xTrue;
 axisveck=[-20 20 -5 35];
@@ -150,6 +155,16 @@ for ij=1:tstep:tmax
         uPurTrue=up;
         uEvaEst=ue;
     end
+    if testNN
+        qqrr=[diag(Qpur); diag(Qeva); diag(Rpur); diag(Reva);cdP;cdE];
+        ministate=xPurMean;
+        uStack=predict(network1,[xTrue;qqrr]);
+        uStack=double(uStack);
+        uPn=uStack(1:2)';
+        uEn=uStack(3:4)';
+    end
+    uPn
+    uPurTrue
     
     %Omniscient evader
     gameState_e.xPur=xTrue(1:4);

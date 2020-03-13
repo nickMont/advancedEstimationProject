@@ -53,7 +53,8 @@ if mode==0
                 datsetveck=[x0;qqrr];
                 solsveck=[up;ue]';
                 RR=[qqrr(5:6);qqrr(11:12)];
-                solsset(1,1,:,nTrain)=[up;ue]'+offset_u*ones(1,4);
+%                solsset(1,1,:,nTrain)=[up;ue]'+offset_u*ones(1,4);
+                solsset(1,1,:,nTrain)=ue';
                 
 %                 %outputs for data checking
 %                 thisset=datset(:,1,1,n);
@@ -148,7 +149,7 @@ network = [
 %     tanhLayer
     
     %dropoutLayer(0.2)
-    fullyConnectedLayer(4)
+    fullyConnectedLayer(2)
     regressionLayer];
 
 miniBatchSize  = 100;

@@ -5,10 +5,13 @@ rng(rngseedno);
 
 %Trains for cost-varying Q,R matrices
 
+%h=findall(groot, 'Type','Figure')
+%h.MenuBar='figure' %may need to use h(#) arg instead
+
 %Input file information--base string and number of input .mat files
 file_input_string='nnTrainSets/nnVarDyn';
-nummats=25;
-full_nn_datfile='nn1v1HighControl.mat';
+nummats=10;
+full_nn_datfile='nn1v1HighControlPursuer.mat';
 
 last_nontraining_iteration_frac=0.95; %fraction of data to be used for training
 
@@ -53,7 +56,8 @@ if mode==0
                 datsetveck=[x0;qqrr];
                 solsveck=[up;ue]';
                 RR=[qqrr(5:6);qqrr(11:12)];
-                solsset(1,1,:,nTrain)=[up;ue]'+offset_u*ones(1,4);
+%                solsset(1,1,:,nTrain)=[up;ue]'+offset_u*ones(1,4);
+                solsset(1,1,:,nTrain)=up';
                 
 %                 %outputs for data checking
 %                 thisset=datset(:,1,1,n);
@@ -95,7 +99,7 @@ else
     fprintf('Invalid mode selection');
 end
 %
-totalData=length(datset)
+totalData=length(datset);
 dd=randperm(totalData);
 
 solsset=solsset(:,:,:,dd);
@@ -148,7 +152,7 @@ network = [
 %     tanhLayer
     
     %dropoutLayer(0.2)
-    fullyConnectedLayer(4)
+    fullyConnectedLayer(2)
     regressionLayer];
 
 miniBatchSize  = 100;
@@ -156,10 +160,10 @@ validationFrequency = floor(last_nontraining_iteration/miniBatchSize);
 options = trainingOptions('sgdm', ...
     'MiniBatchSize',miniBatchSize, ...
     'MaxEpochs',50, ...
-    'InitialLearnRate',0.015, ...
+    'InitialLearnRate',0.03, ...
     'LearnRateSchedule','piecewise', ...
-    'LearnRateDropFactor',0.01, ...
-    'LearnRateDropPeriod',100, ...
+    'LearnRateDropFactor',0.08, ...
+    'LearnRateDropPeriod',20, ...
     'Shuffle','every-epoch', ...
     'ValidationData',{data_validation_input,data_validation_labels}, ...
     'ValidationFrequency',validationFrequency, ...

@@ -46,8 +46,13 @@ uMat = zeros(nu,numP+numE,gameState.kMax+1);
 xPurCell = cell(nmodP);
 xEvaCell = cell(nmodE);
 
-[xPurCell, uMatCellP] = generateStateMatFromPairings(pairingsP,Spur,Seva,gameState,network1,network2);
-[xEvaCell, uMatCellE] = generateStateMatFromPairings(pairingsE,Spur,Seva,gameState,network1,network2);
+if isfield(Seva,'params') && isfield(Spur,'params')
+    [xPurCell, uMatCellP] = generateStateMatFromPairingsNNvarDyn(pairingsP,Spur,Seva,gameState,network1,network2);
+    [xEvaCell, uMatCellE] = generateStateMatFromPairingsNNvarDyn(pairingsE,Spur,Seva,gameState,network1,network2);
+else
+    [xPurCell, uMatCellP] = generateStateMatFromPairings(pairingsP,Spur,Seva,gameState,network1,network2);
+    [xEvaCell, uMatCellE] = generateStateMatFromPairings(pairingsE,Spur,Seva,gameState,network1,network2);
+end
 
 noiseCostPur=3409;
 noiseCostEva=3409;
