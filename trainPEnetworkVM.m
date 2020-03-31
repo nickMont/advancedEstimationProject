@@ -27,7 +27,7 @@ if mode==0
 %     datset=zeros(22,1,1,indatlength*tsim*nummats);
 %     solsset=zeros(1,1,4,indatlength*tsim*nummats);
     datset=zeros(22,1,1,2);
-    solsset=zeros(1,1,1,2);
+    solsset=zeros(1,1,2,2);
     
     nTrain=0; %DO NOT USE n, IT IS OVERLOADED
     numZeros=0;
@@ -50,9 +50,9 @@ if mode==0
                 datset(1:8,1,1,nTrain)=x0+offset_vec;
                 datset(9:22,1,1,nTrain)=qqrr*offset_multiply_qqrr;
                 datsetveck=[x0;qqrr];
-                solsveck=[uPE(2)]';
+                solsveck=[uPE]';
                 RR=[qqrr(5:6);qqrr(11:12)];
-                solsset(1,1,:,nTrain)=solsveck+offset_u*ones(1,1);
+                solsset(1,1,:,nTrain)=solsveck+offset_u*ones(1,2);
                 
 %                 %outputs for data checking
 %                 thisset=datset(:,1,1,n);
@@ -132,11 +132,14 @@ network = [
     batchNormalizationLayer
     tanhLayer
 
-    fullyConnectedLayer(8)
+    fullyConnectedLayer(10)
     batchNormalizationLayer
     tanhLayer
     
-    fullyConnectedLayer(3)
+    fullyConnectedLayer(7)
+    tanhLayer
+    
+    fullyConnectedLayer(4)
     batchNormalizationLayer
     tanhLayer
     
@@ -147,7 +150,7 @@ network = [
 %     tanhLayer
     
     %dropoutLayer(0.2)
-    fullyConnectedLayer(1)
+    fullyConnectedLayer(2)
     regressionLayer];
 
 miniBatchSize  = 100;
