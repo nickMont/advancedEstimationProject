@@ -5,13 +5,10 @@ rng(rngseedno);
 
 %Trains for cost-varying Q,R matrices
 
-%h=findall(groot, 'Type','Figure')
-%h.MenuBar='figure' %may need to use h(#) arg instead
-
 %Input file information--base string and number of input .mat files
-file_input_string='nnTrainSets/nnVarDyn';
-nummats=10;
-full_nn_datfile='nn1v1HighControlPursuer.mat';
+file_input_string='nnTrainSets/nnTrainOptimalVM/nnTrainOptimalVM';
+nummats=16;
+full_nn_datfile='nn1v1OptimalVM.mat';
 
 last_nontraining_iteration_frac=0.95; %fraction of data to be used for training
 
@@ -30,7 +27,7 @@ if mode==0
 %     datset=zeros(22,1,1,indatlength*tsim*nummats);
 %     solsset=zeros(1,1,4,indatlength*tsim*nummats);
     datset=zeros(22,1,1,2);
-    solsset=zeros(1,1,2,2);
+    solsset=zeros(1,1,1,2);
     
     nTrain=0; %DO NOT USE n, IT IS OVERLOADED
     numZeros=0;
@@ -47,17 +44,15 @@ if mode==0
             qqrr=qrS_S{ij,1};
             for ik=1:tsim
                 nTrain=nTrain+1;
-                up=upS_S{ij,1}{ik,1};
-                ue=ueS_S{ij,1}{ik,1};
+                uPE=scaleS_S{ij,1}{ik,1};
                 x0=xtrueS_S{ij,1}{ik};
                 %datset(1:8,1,1,n)=x0+offset*ones(8,1,1);
                 datset(1:8,1,1,nTrain)=x0+offset_vec;
                 datset(9:22,1,1,nTrain)=qqrr*offset_multiply_qqrr;
                 datsetveck=[x0;qqrr];
-                solsveck=[up;ue]';
+                solsveck=[uPE(2)]';
                 RR=[qqrr(5:6);qqrr(11:12)];
-%                solsset(1,1,:,nTrain)=[up;ue]'+offset_u*ones(1,4);
-                solsset(1,1,:,nTrain)=up';
+                solsset(1,1,:,nTrain)=solsveck+offset_u*ones(1,1);
                 
 %                 %outputs for data checking
 %                 thisset=datset(:,1,1,n);
@@ -99,7 +94,7 @@ else
     fprintf('Invalid mode selection');
 end
 %
-totalData=length(datset);
+totalData=length(datset)
 dd=randperm(totalData);
 
 solsset=solsset(:,:,:,dd);
@@ -120,37 +115,39 @@ data_generated = true;
 
 network = [
     matrixInputLayer([22 1 1],'Normalization','none')
-    batchNormalizationLayer
     
     fullyConnectedLayer(25)
+    batchNormalizationLayer
     tanhLayer 
     
     fullyConnectedLayer(22)
+    batchNormalizationLayer
     tanhLayer
      
     fullyConnectedLayer(19)
-    tanhLayer
-    
-    fullyConnectedLayer(17)
     batchNormalizationLayer
     tanhLayer
     
-    fullyConnectedLayer(15)
+    fullyConnectedLayer(14)
     batchNormalizationLayer
-    tanhLayer
-    
-    fullyConnectedLayer(12)
     tanhLayer
 
     fullyConnectedLayer(8)
-    tanhLayer
-    
-    fullyConnectedLayer(6)
     batchNormalizationLayer
     tanhLayer
     
+    fullyConnectedLayer(3)
+    batchNormalizationLayer
+    tanhLayer
+    
+    %averagePooling2dLayer(2,'Stride',2)
+  
+%     fullyConnectedLayer(3)
+%     batchNormalizationLayer
+%     tanhLayer
+    
     %dropoutLayer(0.2)
-    fullyConnectedLayer(2)
+    fullyConnectedLayer(1)
     regressionLayer];
 
 miniBatchSize  = 100;
@@ -158,10 +155,10 @@ validationFrequency = floor(last_nontraining_iteration/miniBatchSize);
 options = trainingOptions('sgdm', ...
     'MiniBatchSize',miniBatchSize, ...
     'MaxEpochs',50, ...
-    'InitialLearnRate',0.1, ...
+    'InitialLearnRate',0.015, ...
     'LearnRateSchedule','piecewise', ...
-    'LearnRateDropFactor',0.05, ...
-    'LearnRateDropPeriod',20, ...
+    'LearnRateDropFactor',0.01, ...
+    'LearnRateDropPeriod',100, ...
     'Shuffle','every-epoch', ...
     'ValidationData',{data_validation_input,data_validation_labels}, ...
     'ValidationFrequency',validationFrequency, ...

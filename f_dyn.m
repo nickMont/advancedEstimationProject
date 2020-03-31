@@ -1,12 +1,32 @@
-function [uPur,uEva,outputflag] = f_dyn(Spur,Seva,gameState,vk)
+function [uPur,uEva,outputflag,tmp1,tmp2,miscOutputs] = f_dyn(Spur,Seva,gameState,vk)
 if nargin<=3
     vk=zeros(100,1);
 end
 lenv=floor(length(vk)/2);
 
+miscOutputs=[];
+
+
+% tic
+% %Generate cost matrices
+% [Cpur_UB,Ceva_UB]=generateCostMatricesUpper(Spur,Seva,gameState);
+% [Cpur_LB,~]=generateCostMatricesLowerForPursuer(Spur,Seva,gameState);
+% [~,Ceva_LB]=generateCostMatricesLowerForEvader(Spur,Seva,gameState);
+% [~,~,a,b]=iterativeStrictDominance(-Cpur_UB,-Ceva_UB,100,-Cpur_LB,-Ceva_LB);
+% SpurTilde=Spur;
+% SevaTilde=Seva;
+% SpurTilde.uMat=SpurTilde.uMat{a};
+% SevaTilde.uMat=SevaTilde.uMat{b};
+% [CpurT,CevaT]=generateCostMatrices(SpurTilde,SevaTilde,gameState);
+% %Solve Nash
+% [rdeq,flag]=findRDEq(-CpurT,-CevaT);
+% sol2=LH2(-CpurT,-CevaT);
+% timeHeuristic=toc;
+
+
+% tic
 %Generate cost matrices
 [Cpur,Ceva]=generateCostMatrices(Spur,Seva,gameState);
-
 %aa=LH2(-Cpur,-Ceva)
 %lhPur=aa{1}
 %lhEva=aa{2}
@@ -17,6 +37,11 @@ sol2=LH2(-Cpur,-Ceva);
 %R=Seva.Jparams.Rself
 %mp=max(sol2{1})
 %me=max(sol2{2})
+% timeDefault=toc;
+% miscOutputs=[timeHeuristic; timeDefault];
+
+tmp1=[];
+tmp2=[];
 if flag==0 %if no unique solution, run LH2 and take E(u) for result
     sol=LH2(-Cpur,-Ceva);
 %     uPur = zeros(gameState.nu,1);
@@ -35,6 +60,8 @@ else %unique solution found
     ue_index=rdeq(2,1);
     uPur=Spur.uMat{up_index};
     uEva=Seva.uMat{ue_index};
+    tmp1=up_index;
+    tmp2=ue_index;
 end
 
 %xkp1_pur = f_dynPur(gameState.xPur,uPur,gameState.dt,vk(1:lenv));

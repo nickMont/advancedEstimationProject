@@ -1,4 +1,4 @@
-function [xCell,uCell] = generateStateMatFromPairingsUpperForPursuer(pairings, Spur, Seva, gameState)
+function [xCell,uCell] = generateStateMatFromPairingsUpper(pairings, Spur, Seva, gameState)
 nx = length(gameState.xPur{1});
 nv = nx/2;
 nu = nv;

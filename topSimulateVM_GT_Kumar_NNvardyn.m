@@ -19,6 +19,10 @@ clear;clc;
 %VM: J=1.5638e+04
 %NN: J=2.5165e+04
 
+%cdP=0.3
+%NN w/cd=0.30: J=1.7494e+04
+%NN w/cd=0.15: J=1.7500e+04
+
 %note: change upmax to 1 for second go
 
 load pursuerTestNet.mat
@@ -78,8 +82,8 @@ Qpur = diag([50 20 10 20]); Rpur = diag([90 80]);
 Qeva = diag([50 30 20 20]); Reva = diag([10 10]);
 %cdP=.3*rand;
 %cdE=.3*rand;
-cdP=0.2;
-cdE=0.2;
+cdP=0.3;
+cdE=0.3;
 
 qrTrue=[diag(Qeva);diag(Reva)];
 

@@ -88,11 +88,13 @@ cholQ2p=chol(Qnoisepur(1:2,1:2))'; cholQ2e=chol(Qnoisepur(3:4,3:4))';
 Bnoiseeva=Gnoiseeva;
 Peva=1e-2*eye(8);
 
+if evaderUsesKumar || pursuerUsesKumar
 Gcontinuous=[0 0
    0 0
    1 0
    0 1];
 [Fcontinuous,Aapprx]=calculateFforKumar(Abk2,tstep,[1 0 1 0; 0 1 0 1; .01 0 -.21 0; 0 .01 0 -.21]); %NOTE:these are subtracted
+end
 
 Ppur=Peva;
 %This can be shunted off to a separate function
@@ -105,9 +107,11 @@ axisveck=[-20 20 -5 35];
 gameStateValsEva.nX=4;
 gameStateValsEva.R21=zeros(2,2);
 gameStateValsEva.R12=zeros(2,2);
+if evaderUsesKumar || pursuerUsesKumar
 gameStateValsEva.F=Fcontinuous;
 gameStateValsEva.G1=Gcontinuous;
 gameStateValsEva.G2=Gcontinuous;
+end
 gameStateValsEva.W=Qnoiseeva;
 gameStateValsEva.V1=Peva(1:4,1:4);
 gameStateValsEva.V2=Ppur(1:4,1:4);
@@ -122,9 +126,11 @@ Qvec0Eva=[[reshape(Qeva, [16 1]); reshape(Qpur, [16,1]); zeros(32,1)] [reshape(Q
 gameStateValsPur.nX=4;
 gameStateValsPur.R21=zeros(2,2);
 gameStateValsPur.R12=zeros(2,2);
+if evaderUsesKumar || pursuerUsesKumar
 gameStateValsPur.F=Fcontinuous;
 gameStateValsPur.G1=Gcontinuous;
 gameStateValsPur.G2=Gcontinuous;
+end
 gameStateValsPur.W=Qnoiseeva;
 gameStateValsPur.V1=Ppur(1:4,1:4);
 gameStateValsPur.V2=Peva(1:4,1:4);
@@ -210,7 +216,7 @@ dJS(:,1)=dJ;
 
 for ij=1:tstep:tmax
     n=n+1
-    tic
+    %tic
     
     %reset noise inflations
     QinflatePur=Qnoisepur;
@@ -385,7 +391,7 @@ for ij=1:tstep:tmax
     axis(axisveck)
     end
     
-    tThisStep=toc
+    %tThisStep=toc
 end
 
 if plotEndFlag==1

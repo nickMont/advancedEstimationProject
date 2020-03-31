@@ -1,8 +1,9 @@
-function [uPurIndex,uEvaIndex,outputflag,uPmat,uEmat] = f_dynNN(Spur,Seva,gameState,vk,network1,network2)
+function [uPurIndex,uEvaIndex,outputflag,uPmat,uEmat,misc] = f_dynNN(Spur,Seva,gameState,vk,network1,network2)
 if nargin<=3
     vk=zeros(100,1);
 end
 lenv=floor(length(vk)/2);
+misc=[];
 
 %Generate cost matrices
 tic
@@ -32,15 +33,14 @@ VevaUpper=-CevaUpper;
 VpurLower=-CpurLower;
 VevaLower=-CevaLower;
 [Vp2,Ve2,rowPrune,colPrune]=iterativeStrictDominance(VpurLower,VevaLower,100,VpurUpper,VevaUpper);
-% sp1=size(Cpur)
-% se1=size(Ceva)
-% sp2=size(Vp2)
-% se2=size(Ve2)
-%Spur_prune=Spur;
-%Seva_prune=Seva;
-%derp=generateCostMatricesNNv2(Spur_prune,Seva_prune,gameState,network1,network2);
-dt=toc;
-t2=1/3*dt+t1;
+[sp1,se1]=size(Cpur);
+[sp2,se2]=size(Vp2);
+Spur_prune=Spur;
+Seva_prune=Seva;
+derp=generateCostMatricesNNv2(Spur_prune,Seva_prune,gameState,network1,network2);
+timeHeuristic=toc;
+
+misc=[t1;timeHeuristic;sp1*se1;sp2*se2];
 
 %aa=LH2(-Cpur,-Ceva)
 %lhPur=aa{1}

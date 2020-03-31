@@ -21,7 +21,7 @@ nEva=4;
 nTargets=2;
 
 tstep=1;
-tmax=20;
+tmax=40;
 
 flagUseVelmatchInsteadOfGT=false;
 
@@ -136,6 +136,8 @@ f2=scatter(xTrue(5),xTrue(6),'r');
 axis(axisveck)
 end
 
+heurstore=[];
+
 for ij=1:tstep:tmax
     n=n+1
     tic
@@ -177,7 +179,8 @@ for ij=1:tstep:tmax
     Seva_p.Jparams.targetValue=targetValue;
     Seva_p.Jparams.reserveRewardWeightEva=VreserveE;
     Seva_p.umaxE=umax;
-    [upPairs_p,uePairs_e,flag,upMat,ueMat]=f_dynNN(Spur_p,Seva_p,gameState_p,zeros(4,1),network1,network2);
+    [upPairs_p,uePairs_e,flag,upMat,ueMat,times]=f_dynNN(Spur_p,Seva_p,gameState_p,zeros(4,1),network1,network2);
+    heurstore=[heurstore times];
     if flag==1
         for iP=1:nPur
             uPur{iP}=upMat{upPairs_p}(:,iP);
@@ -292,5 +295,4 @@ for ij=1:tstep:tmax
     tThisStep=toc
 end
 
-scratchPlot
 

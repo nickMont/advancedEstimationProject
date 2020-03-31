@@ -8,9 +8,11 @@ clear;clc;
 %   +y - -
 %
 
-load nnvarDynTrained0417.mat
-network1=net;
-testNN=true;
+%NOTE: CURRENTLY SET FOR U BASED ON VELOCITY MATCHING SCALE
+
+%load nnvarDynTrained0417.mat
+%network1=net;
+testNN=false;
 
 iter=100;
 
@@ -18,6 +20,7 @@ ueS_S=cell(iter,1);
 upS_S=cell(iter,1);
 xtrueS_S=cell(iter,1);
 qrS_S=cell(iter,1);
+scaleS_S=cell(iter,1);
 
 %rngseedno=457;
 %rng(rngseedno)
@@ -29,15 +32,19 @@ completion_status = iteriter/iter*100
 plotFlag=0;
 
 tstep=1;
-tmax=5;
+tmax=20;
 
 
 %utemp=permn(-2:0.2:2,2)';
-utemp=permn(-1:0.1:1,2)';
+uvec=-1:0.05:1;
+utemp=permn(uvec,2)';
 upmax=2;
 umax=upmax;
 utype.radius=upmax;
 utemp=mapUtempToUvec(utemp,"circle",utype);
+
+uEvaBestPerformanceEstimate=[0;0];
+safeDecelParamVM=0.2;
 
 Game.uType="velstep";
 %Options: velstep (step of constant size, from velocity)
@@ -81,8 +88,8 @@ Ppur=Peva;
 %This can be shunted off to a separate function
 n=0; %n is now the iteration index (yes, misuse of var names)
 %xTrue=[[0 0 2.2 0.8]'; [4 6 0 0]'];
-xTrue = diag([20 20 0.5 0.5 20 20 0.5 0.5])*(2*rand(8,1)-1);
-xTrue = diag([4 4 .5 .5 4 4 .5 .5])*rand(8,1);
+xTrue = diag([20 20 2 2 20 20 2 2])*(2*rand(8,1)-1);
+%xTrue = diag([4 4 .5 .5 4 4 .5 .5])*rand(8,1);
 xPur=xTrue;
 xEva=xTrue;
 axisveck=[-20 20 -5 35];
@@ -104,7 +111,8 @@ cholExciteDropOrder=0.00;
 
 xTrueS={};
 xTrueS{1}=xTrue;
-upS=cell(floor(tmax/tstep));ueS=cell(floor(tmax/tstep));
+upS=cell(floor(tmax/tstep),1);ueS=cell(floor(tmax/tstep),1);
+scaleS=cell(floor(tmax/tstep),1);
 
 for ij=1:tstep:tmax
     n=n+1
@@ -113,6 +121,7 @@ for ij=1:tstep:tmax
     %reset noise inflations
     QinflatePur=Qnoisepur;
     QinflateEva=Qnoiseeva;
+    scaleS{n}=zeros(2,1);
     
     xPurMean=[xPur;diag(Qeva);diag(Reva)];
     xEva=xEva;
@@ -125,9 +134,13 @@ for ij=1:tstep:tmax
     gameState_p.dt=tstep;
     gameState_p.kMax=1;
     gameState_p.nu=2;
-    for ik=1:length(utemp)
-        Spur_p.uMat{ik}=utemp(:,ik);
+    uhat=unit_vector(vmRGVO_tune(xTrue(1:4),xTrue(5:8),upmax,2,tstep,uEvaBestPerformanceEstimate,safeDecelParamVM));
+    for ik=1:length(uvec)
+        Spur_p.uMat{ik}=upmax*uvec(ik)*uhat;
     end
+%     for ik=1:length(utemp)
+%         Spur_p.uMat{ik}=utemp(:,ik);
+%     end
     Spur_p.Jname='J_pur';
     Spur_p.fname='f_dynCD2';
     Spur_p.Jparams.Q=Qpur;
@@ -142,7 +155,7 @@ for ij=1:tstep:tmax
     Seva_p.Jparams.Ropp=zeros(2,2);
     Seva_p.params.cd=cdE;
     % Propagate to next time step
-    [up,ue,flag]=f_dyn(Spur_p,Seva_p,gameState_p,zeros(4,1));
+    [up,ue,flag,tmp1,tmp2]=f_dyn(Spur_p,Seva_p,gameState_p,zeros(4,1));
     if flag==0
         upp=randsample(1:length(Spur_p.uMat),1,true,up);
         uPurTrue=Spur_p.uMat{upp}(:,1);
@@ -151,9 +164,11 @@ for ij=1:tstep:tmax
             uEvaEst=uEvaEst+ue(ik)*Seva_p.uMat{ik}(:,1);
         end
         QinflatePur=Qnoisepur+blkdiag(zer2,1*eye2);
+        scaleS{n}(1)=uvec(upp);
     else
         uPurTrue=up;
         uEvaEst=ue;
+        scaleS{n}(1)=uvec(tmp1);
     end
     if testNN
         qqrr=[diag(Qpur); diag(Qeva); diag(Rpur); diag(Reva);cdP;cdE];
@@ -163,8 +178,6 @@ for ij=1:tstep:tmax
         uPn=uStack(1:2)';
         uEn=uStack(3:4)';
     end
-    uPn
-    uPurTrue
     
     %Omniscient evader
     gameState_e.xPur=xTrue(1:4);
@@ -172,9 +185,13 @@ for ij=1:tstep:tmax
     gameState_e.dt=tstep;
     gameState_e.kMax=1;
     gameState_e.nu=2;
-    for ik=1:length(utemp)
-        Spur_e.uMat{ik}=utemp(:,ik);
+    uhat=unit_vector(vmRGVO_tune(xTrue(1:4),xTrue(5:8),upmax,2,tstep,uEvaBestPerformanceEstimate,safeDecelParamVM));
+    for ik=1:length(uvec)
+        Spur_e.uMat{ik}=upmax*uvec(ik)*uhat;
     end
+%     for ik=1:length(utemp)
+%         Spur_e.uMat{ik}=utemp(:,ik);
+%     end
     Spur_e.Jname='J_pur';
     Spur_e.fname='f_dynCD2';
     Spur_e.Jparams.Q=Qpur;
@@ -191,7 +208,7 @@ for ij=1:tstep:tmax
     gameState_e = gameState_p;
     gameState_e.xPur=xEva(1:4);
     gameState_e.xEva=xEva(5:8);
-    [up,ue,flag]=f_dyn(Spur_e,Seva_e,gameState_e,zeros(4,1));
+    [up,ue,flag,tmp1,tmp2]=f_dyn(Spur_e,Seva_e,gameState_e,zeros(4,1));
     if flag==0
         uee=randsample(1:length(Seva_e.uMat),1,true,ue);
         uEvaTrue=Seva_e.uMat{uee}(:,1);
@@ -199,10 +216,12 @@ for ij=1:tstep:tmax
         for ik=1:length(Spur_e.uMat)
             uPurEst=uPurEst+up(ik)*Spur_e.uMat{ik}(:,1);
         end
+        scaleS{n}(2)=uvec(uee);
         QinflateEva=Qnoiseeva+blkdiag(1*eye2, zer2);
     else
         uEvaTrue=ue;
         uPurEst=up;
+        scaleS{n}(2)=uvec(tmp2);
     end
     
     xTrue(1:4)=f_dynPur(xTrue(1:4),uPurTrue(:,1),tstep,zeros(2,1));
@@ -222,6 +241,7 @@ for ij=1:tstep:tmax
     upS{n}=uPurTrue(:,1);
     ueS{n}=uEvaTrue(:,1);
     tThisStep=toc
+    
 end
 
 saving_this_iteration=true
@@ -229,6 +249,7 @@ qrS_S{iteriter,1}=qrTrueAll;
 xtrueS_S{iteriter}=xTrueS;
 upS_S{iteriter}=upS;
 ueS_S{iteriter}=ueS;
+scaleS_S{iteriter}=scaleS;
 end
 
 
