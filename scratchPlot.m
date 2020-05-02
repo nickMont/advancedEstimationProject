@@ -1,6 +1,7 @@
 %Scratch plotting code
 
 % figure(1);clf;
+% figset
 % shapes={'-o','-x','-*','-s'};
 % for ij=1:nPur
 %     xy=[];
@@ -29,7 +30,8 @@
 % legend('D_1','D_2','D_3','A_1','A_2','A_3')
 % figset
 
-figure(1);clf;
+figure(2);clf;
+figset
 shrink=heurstore(4,:)./heurstore(3,:);
 plot(1:length(heurstore(1,:)),heurstore(1,:),'-x')
 hold on
@@ -40,7 +42,8 @@ xlabel('Iteration count')
 ylabel('Execution Time (s)')
 yyaxis right
 plot(1:length(shrink),shrink,'-o')
-ylabel('Control evaluations with heuristic (fraction of non-heuristic case)')
+set(gca,'ycolor','k')
+ylabel('Control evaluations (fraction of non-heuristic case)')
 legend('Execution time without heuristic','Execution time with heuristic','Reduction in scale')
 figset
 
