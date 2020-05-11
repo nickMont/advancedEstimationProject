@@ -1,4 +1,4 @@
-function nashEqbm = LH2(varargin)
+function [nashEqbm,lhRow,lhCol] = LH2(varargin)
 % function nashEqbm = LEMKEHOWSON(varargin)
 %
 % This function computes a sample mixed strategy Nash equilibrium in a
@@ -172,6 +172,9 @@ for player = 1:2
     nashEqbm{player} = x/sum(x);
     
 end
+
+lhRow=nashEqbm{1};
+lhCol=nashEqbm{2};
 
 end
 

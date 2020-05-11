@@ -1,6 +1,4 @@
 clear;clc;
-% Main function for 2D game AI for pop-the-balloon
-
 %
 % Game state convention
 %        +x
@@ -14,7 +12,7 @@ rngseedno=40;
 rng(rngseedno)
 
 plotFlag=0;
-plotEndFlag=1;
+plotEndFlag=0;
 %npart=5000;
 npart=500;
 
@@ -332,6 +330,7 @@ if plotEndFlag==1
     figset
     
     subplot(3,1,2);
+    figset
     plot(1:n+1,dJS(3,:),'-.r');
     hold on
     plot(1:n+1,dJS(4,:),'-ob');
@@ -341,6 +340,7 @@ if plotEndFlag==1
     figset
     
     subplot(3,1,3);
+    figset
     plot(1:n+1,dJS(5,:),'-.r');
     hold on
     plot(1:n+1,dJS(6,:),'-ob');
@@ -354,6 +354,7 @@ if plotEndFlag==1
         xP(:,ijk)=xTrueS{ijk}(1:2); xE(:,ijk)=xTrueS{ijk}(5:6);
     end
     figure(3);clf;
+    figset
     plot(xP(1,:),xP(2,:),'-xr');
     hold on
     plot(xE(1,:),xE(2,:),'-ob');

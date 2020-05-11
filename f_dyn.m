@@ -7,37 +7,38 @@ lenv=floor(length(vk)/2);
 miscOutputs=[];
 
 
-tic
-%Generate cost matrices
-[Cpur_UB,Ceva_UB]=generateCostMatricesUpper(Spur,Seva,gameState);
-[Cpur_LB,~]=generateCostMatricesLowerForPursuer(Spur,Seva,gameState);
-[~,Ceva_LB]=generateCostMatricesLowerForEvader(Spur,Seva,gameState);
-[~,~,a,b]=iterativeStrictDominance(-Cpur_UB,-Ceva_UB,100,-Cpur_LB,-Ceva_LB);
-SpurTilde=Spur;
-SevaTilde=Seva;
-SpurTilde.uMat=SpurTilde.uMat{a};
-SevaTilde.uMat=SevaTilde.uMat{b};
-[CpurT,CevaT]=generateCostMatrices(SpurTilde,SevaTilde,gameState);
-%Solve Nash
-[rdeq,flag]=findRDEq(-CpurT,-CevaT);
-sol2=LH2(-CpurT,-CevaT);
-timeHeuristic=toc;
+% tic
+% %Generate cost matrices
+% [Cpur_UB,Ceva_UB]=generateCostMatricesUpper(Spur,Seva,gameState);
+% [Cpur_LB,~]=generateCostMatricesLowerForPursuer(Spur,Seva,gameState);
+% [~,Ceva_LB]=generateCostMatricesLowerForEvader(Spur,Seva,gameState);
+% [~,~,a,b]=iterativeStrictDominance(-Cpur_UB,-Ceva_UB,100,-Cpur_LB,-Ceva_LB);
+% SpurTilde=Spur;
+% SevaTilde=Seva;
+% SpurTilde.uMat=SpurTilde.uMat{a};
+% SevaTilde.uMat=SevaTilde.uMat{b};
+% [CpurT,CevaT]=generateCostMatrices(SpurTilde,SevaTilde,gameState);
+% %Solve Nash
+% [rdeq,flag]=findRDEq(-CpurT,-CevaT);
+% sol2=LH2(-CpurT,-CevaT);
+% timeHeuristic=toc;
 
 tic
 % Generate cost matrices
 [Cpur,Ceva]=generateCostMatrices(Spur,Seva,gameState);
-aa=LH2(-Cpur,-Ceva)
-lhPur=aa{1}
-lhEva=aa{2}
+% aa=LH2(-Cpur,-Ceva)
+% lhPur=aa{1}
+% lhEva=aa{2}
 outputflag=1;
 % Solve Nash
 [rdeq,flag]=findRDEq(-Cpur,-Ceva);
 sol2=LH2(-Cpur,-Ceva);
-R=Seva.Jparams.Rself
-mp=max(sol2{1})
-me=max(sol2{2})
-timeDefault=toc;
-miscOutputs=[timeHeuristic; timeDefault];
+% R=Seva.Jparams.Rself
+% mp=max(sol2{1})
+% me=max(sol2{2})
+% timeDefault=toc;
+% miscOutputs=[timeHeuristic; timeDefault];
+sol=sol2;
 
 tmp1=[];
 tmp2=[];
