@@ -23,7 +23,7 @@ miscOutputs=[];
 % sol2=LH2(-CpurT,-CevaT);
 % timeHeuristic=toc;
 
-tic
+% tic
 % Generate cost matrices
 [Cpur,Ceva]=generateCostMatrices(Spur,Seva,gameState);
 % aa=LH2(-Cpur,-Ceva)
