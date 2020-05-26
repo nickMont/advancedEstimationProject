@@ -7,8 +7,8 @@ clear;clc;
 %   +y - -
 %
 
-%rngseedno=10;
-rngseedno=40;
+%rngseedno=60;
+rngseedno=42069;
 rng(rngseedno)
 
 plotFlag=0;
@@ -31,7 +31,7 @@ Game.dt=tstep;
 % S contains state information
 
 Qpur = diag([100 100 0 0]); Rpur = diag([0.1 1]);
-Qeva = diag([100 50 0 0]); Reva = diag([5 10]);
+Qeva = diag([100 50 0 0]); Reva = diag([1 10]);
 
 qrTrue=[diag(Qeva);diag(Reva)];
 

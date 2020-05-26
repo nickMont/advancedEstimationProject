@@ -25,7 +25,14 @@ miscOutputs=[];
 
 % tic
 % Generate cost matrices
-[Cpur,Ceva]=generateCostMatrices(Spur,Seva,gameState);
+%
+if ~isfield(Spur,'UseVelMatch') || ~isfield(Seva,'UseVelMatch') || ~Spur.UseVelMatch || ~Seva.UseVelMatch
+    [Cpur,Ceva]=generateCostMatrices(Spur,Seva,gameState);
+else
+    [Cpur,Ceva,uP,uE]=generateCostMatricesVM2(Spur,Seva,gameState);
+    miscOutputs.uP=uP;
+    miscOutputs.uE=uE;
+end
 % aa=LH2(-Cpur,-Ceva)
 % lhPur=aa{1}
 % lhEva=aa{2}

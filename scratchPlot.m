@@ -93,3 +93,30 @@ xlabel('East displacement (m)');
 ylabel('North displacement (m)');
 legend('Pursuer','Evader');
 figset
+
+% %     load quaddat.mat;
+% load figs_and_mats\figs_mats_PES\linCompare.mat
+% load figs_and_mats\figs_mats_PES\quaddatPES.mat
+% indsamp=1:5:100;
+% %     xP2d=xStore(7:8,indsamp);
+% %     xE2d=xStore(19:20,indsamp);
+% mx=(xP2d(2,1)-xE2d(2,1))/(xP2d(1,1)-xE2d(1,1));
+% xPlin_x=-5:0.3:1;
+% xPlin_y=xPlin_x*mx;
+% xElin_x=-6:0.3:0;
+% xElin_y=xElin_x*mx;
+% 
+% figure(1);clf;
+% figset
+% plot(xP2d(1,:),xP2d(2,:),'-*b');
+% hold on
+% plot(xE2d(1,:),xE2d(2,:),'-Or');
+% hold on
+% plot(xPlinCompare(1,:),xPlinCompare(2,:),'-.*k');
+% hold on
+% plot(xElinCompare(1,:),xElinCompare(2,:),'-.og');
+% axis([-6 2 -6 2])
+% xlabel('x-position (m)')
+% ylabel('y-position (m)')
+% legend('Pursuer trajectory, quad dynamics','Evader trajectory, quad dynamics','Pursuer trajectory, point mass','Evader trajectory, point mass');
+% figset
