@@ -26,10 +26,10 @@ plotEndFlag=1;
 tstep=1;
 tmax=20;
 
-km_predict=1;
+km_predict=5;
 
 %utemp=permn(-2:0.2:2,2)';
-uvec=-1:.5:1;
+uvec=-1:.1:1;
 utemp=permn(uvec,km_predict)';
 upmax=2;
 umax=upmax;
