@@ -2,7 +2,7 @@ clear;clc;
 
 umin=-0.6;
 umax=0.6;
-du=0.2;
+du=0.3;
 du2=100;
 
 dt=0.1;
@@ -27,6 +27,9 @@ xStore=xPur;
 
 uPhist=[];
 uEhist=[];
+
+JJp=0;
+JJe=0;
 
 tic
 for t=t0:dt:tmax
@@ -65,44 +68,6 @@ for t=t0:dt:tmax
     uPurTrue=up;
     uEvaTrue=ue;
     
-    %     %Omniscient evader
-    %     gameState_e.xPur=xEva(1:12);
-    %     gameState_e.xEva=xEva(13:24);
-    %     gameState_e.dt=dt;
-    %     gameState_e.kMax=1;
-    %     gameState_e.nu=2;
-    %     gameState_e.discType='overX';
-    %     for ik=1:length(uPur)
-    %         Spur_e.uMat{ik}=uPur(:,ik);
-    %     end
-    %     Spur_e.Jname='J_purQuad';
-    %     Spur_e.fname='f_dynPurQuad';
-    %     Spur_e.Jparams.Q=Qpur;
-    %     Spur_e.Jparams.Rself=Rpur;
-    %     Spur_e.Jparams.Ropp=zeros(4,4);
-    %     for ik=1:length(uEva)
-    %         Seva_e.uMat{ik}=uEva(:,ik);
-    %     end
-    %     Seva_e.Jname='J_evaQuad';
-    %     Seva_e.fname='f_dynEvaQuad';
-    %     Seva_e.Jparams.Q=Qeva;
-    %     Seva_e.Jparams.Rself=Reva;
-    %     Seva_e.Jparams.Ropp=zeros(2,2);
-    %     gameState_e = gameState_p;
-    %     [up,ue,flag]=f_dyn2(Spur_e,Seva_e,gameState_e,zeros(4,1));
-    %     if flag==0
-    %         uee=randsample(1:length(Seva_e.uMat),1,true,ue);
-    %         uEvaTrue=Seva_e.uMat{uee}(:,1);
-    %         uPurEst=zeros(gameState_p.nu,gameState_p.kMax);
-    %         for ik=1:length(Spur_e.uMat)
-    %             uPurEst=uPurEst+up(ik)*Spur_e.uMat{ik}(:,1);
-    %         end
-    %         QinflateEva=Qnoiseeva+blkdiag(1*eye2, zer2);
-    %     else
-    %         uEvaTrue=ue;
-    %         uPurEst=up;
-    %     end
-    
     if strcmp(gameState_p.discType,'overX')
         uPurTrue=uPSampled;
         uEvaTrue=uESampled;
@@ -122,7 +87,13 @@ for t=t0:dt:tmax
     xEva=xTrue+noise;
     xPur=xTrue+noise;
     
-    xStore=[xStore xTrue]
+    xD=[zeros(24,1) xTrue];
+    Jpur=feval(Spur_p.Jname,xD(1:12,:),xD(13:24,:),uPurTrue,uEvaTrue,Spur_p.Jparams);
+    Jeva=feval(Seva_p.Jname,xD(13:24,:),xD(1:12,:),uEvaTrue,uPurTrue,Seva_p.Jparams);
+    JJp=JJp+Jpur
+    JJe=JJe+Jeva
+    
+    xStore=[xStore xTrue];
 end
 tTotal=toc
 

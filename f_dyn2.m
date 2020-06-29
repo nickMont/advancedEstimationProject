@@ -11,39 +11,37 @@ lenv=floor(length(vk)/2);
 %aa=LH2(-Cpur,-Ceva)
 %lhPur=aa{1}
 %lhEva=aa{2}
-outputflag=1;
 %Solve Nash
-%[rdeq,flag]=findRDEq(-Cpur,-Ceva);
-
-flag=0;
+[rdeq,flag]=findRDEq(-Cpur,-Ceva)
+outputflag=flag;
 
 if flag==0 %if no unique solution, run LH2 and take E(u) for result
     sol=LH2(-Cpur,-Ceva);
-%     uPur = zeros(gameState.nu,1);
-%     uEva = zeros(gameState.nu,1);
-%     for ij=1:length(sol{1})
-%         uPur=uPur + sol{1}(ij)*Spur.uMat{ij};
-%     end
-%     for ij=1:length(sol{2})
-%         uEva = uEva + sol{2}(ij)*Seva.uMat{ij};
-%     end
+    %     uPur = zeros(gameState.nu,1);
+    %     uEva = zeros(gameState.nu,1);
+    %     for ij=1:length(sol{1})
+    %         uPur=uPur + sol{1}(ij)*Spur.uMat{ij};
+    %     end
+    %     for ij=1:length(sol{2})
+    %         uEva = uEva + sol{2}(ij)*Seva.uMat{ij};
+    %     end
     uPur=sol{1};
     uEva=sol{2};
-    outputflag=0;
+    uValP=[];
+    uValE=[];
+    if ~(isempty(uP))
+        uInd=randsample(nP,1,true,uPur);
+        uValP=uP{uInd};
+        uInd=randsample(nE,1,true,uEva);
+        uValE=uE{uInd};
+    end
 else %unique solution found
     up_index=rdeq(1,1);
     ue_index=rdeq(2,1);
     uPur=Spur.uMat{up_index};
     uEva=Seva.uMat{ue_index};
-end
-
-uValP=[];
-uValE=[];
-if ~(isempty(uP))
-    uInd=randsample(nP,1,true,uPur)
-    uValP=uP{uInd};
-    uInd=randsample(nE,1,true,uEva)
-    uValE=uE{uInd};    
+    uValP=uP{up_index,ue_index};
+    uValE=uE{ue_index,ue_index};
 end
 
 end

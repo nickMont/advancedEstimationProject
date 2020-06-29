@@ -1,4 +1,5 @@
-function [omegaR,ntries] = quadControllerACCONLY(ewxv, omegaR_est,  mode, accel_vec)
+function [omegaR,ntries] = quadControllerACCONLY(ewxv, omegaR_est,  mode, accel_vec, desired_heading)
+psi_des=desired_heading;
 
 
 %max rotor speed squared
@@ -14,12 +15,12 @@ H_prop=zeros(6,1);
 A=zeros(6,1);
 
 [e,wI,x,v]=split_ICs(ewxv,1);
-[e_des,wI_des,x_des,v_des]=split_ICs(ewxv_des,1);
+% [e_des,wI_des,x_des,v_des]=split_ICs(ewxv_des,1);
 qdot=[v;wI];
 RBI=calculate_R_from_euler(e);
 RIB=RBI';
 
-v_rel_B=RBI*(v-vwind_est);
+v_rel_B=RBI*v;
 
 edot=wI;
 xdot=v;
@@ -109,7 +110,6 @@ h=C_mat*qdot+G_mat-Rm_prop-H_prop-G_prop-G_body-A;
 hu=h(1:2);
 hc=h(3:6);
 
-
 Muu=M_mat(1:2,1:2);
 Muc=M_mat(1:2,3:6);
 Mcu=M_mat(3:6,1:2);
@@ -128,6 +128,9 @@ vxerrmax=200;
 yerrmax=xerrmax;
 vyerrmax=vxerrmax;
 
+kp_a=100;
+kd_a=.25*kp_a;
+
 v1=0;
 %If acceleration is given as an input
 if mode==3
@@ -136,23 +139,22 @@ else  %If acceleration is not specified, use PID
     v1=-kp_p_z*(x(3)-x_des(3)) - kd_p_z*(v(3)-v_des(3)) - kI_p_z*int_errors(9);
 end
 
-phi_des=e_des(1);
-theta_des=e_des(2);
-psi_des=e_des(3);
+%phi_des=e_des(1);
+%theta_des=e_des(2);
+%psi_des=e_des(3);
 
 if mode==1 || mode==3
     
-    xerr=x(1)-x_des(1);
-    vxerr=v(1)-v_des(1);
-    
-    yerr=x(2)-x_des(2);
-    vyerr=v(2)-v_des(2);
-    
-
-    xerr=saturationF(xerr,-xerrmax,xerrmax);
-    vxerr=saturationF(vxerr,-vxerrmax,vxerrmax);
-    yerr=saturationF(yerr,-yerrmax,yerrmax);
-    vyerr=saturationF(vyerr,-vyerrmax,vyerrmax);
+%     xerr=x(1)-x_des(1);
+%     vxerr=v(1)-v_des(1);
+%     
+%     yerr=x(2)-x_des(2);
+%     vyerr=v(2)-v_des(2);
+% 
+%     xerr=saturationF(xerr,-xerrmax,xerrmax);
+%     vxerr=saturationF(vxerr,-vxerrmax,vxerrmax);
+%     yerr=saturationF(yerr,-yerrmax,yerrmax);
+%     vyerr=saturationF(vyerr,-vyerrmax,vyerrmax);
     
     xPD=0;
     yPD=0;

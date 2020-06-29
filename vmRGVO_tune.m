@@ -1,4 +1,4 @@
-function u = vmRGVO_tune(xP,xE,umaxP,nX,dt,uEvaEst,decelParam)
+function [u,misc] = vmRGVO_tune(xP,xE,umaxP,nX,dt,uEvaEst,decelParam)
 % http://cimlab.mie.utoronto.ca/wp-content/uploads/2018/06/Kunwar-2006-Rendezvous-guidance-trajectory-planning-for-robotic-dynamic-obstacle-avoidance-and-interception.pdf
 % xP/xE is full state of position/velocity
 % returns nan if no control is possible
@@ -34,6 +34,8 @@ else
     end
     u=uMag*rUnit;
 end
+misc.xPout=f_dynPur(xP,u,dt,zeros(2,1));
+misc.xEout=f_dynEva(xE,uEvaEst,dt,zeros(2,1));
 
 
 end
