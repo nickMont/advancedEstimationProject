@@ -1,14 +1,29 @@
 clear;clc;
 beep off;
 
+rngseedno=457;
+rng(rngseedno);
+
 %NOTE: TUNING IN VMRGO REQUIRES USING fdynEva AND fdynPur FOR PM SIM
 %  SET DRAG PARAMS IN BOTH TO 0.
 %NOTE: set the target function to generateCostMatricesVMquad in f_dyn2
 %  BEFORE running this; hardcoded the other way to remain backwards
 %  compatible
 
-% Jp=1.0408e+04
-% Je=.3878e+03
+
+% standard controller:
+% runtime: 5.0165e+03
+% Jp: 1.0120e+04
+% Je: 9.6958e+03
+
+% VMGT:
+% runtime: 476.6351
+% Jp: 1.0408e+04
+% Je: 9.3878e+03
+
+Spur_p.controlType='gt_overx';
+Seva_p.controlType='vmquad';
+% gameState_p.controlType='gt_overx';
 
 umax=0.1;
 
@@ -17,7 +32,7 @@ t0=0;
 tmax=10;
 
 %utemp=permn(-2:0.2:2,2)';
-uvec=-1:0.2:1;
+uvec=-1:.1:1;
 utemp=permn(uvec,2)';
 upmax=umax;
 umax=upmax;
@@ -63,8 +78,15 @@ for t=t0:dt:tmax
     gameState_p.nu=2;
     gameState_p.discType='overX';
     gameState_p.uMaxP=umax;
-    for ik=1:length(uvec)
-        Spur_p.uMat{ik}=upmax*uvec(ik);
+    if strcmp(Spur_p.controlType,'vmquad')
+        for ik=1:length(uvec)
+            Spur_p.uMat{ik}=upmax*uvec(ik);
+        end
+    end
+    if strcmp(Spur_p.controlType,'gt_overx')
+        for ik=1:length(utemp)
+            Spur_p.uMat{ik}=utemp(:,ik);
+        end
     end
     Spur_p.Jname='J_purQuad';
     Spur_p.fname='f_dynPurQuad';
@@ -72,8 +94,15 @@ for t=t0:dt:tmax
     Spur_p.Jparams.Rself=Rpur;
     Spur_p.Jparams.Ropp=zeros(4,4);
     Spur_p.UseVelMatch=true;
-    for ik=1:length(uvec)
-        Seva_p.uMat{ik}=Spur_p.uMat{ik};
+    if strcmp(Seva_p.controlType,'vmquad')
+        for ik=1:length(uvec)
+            Seva_p.uMat{ik}=upmax*uvec(ik);
+        end
+    end
+    if strcmp(Seva_p.controlType,'gt_overx')
+        for ik=1:length(utemp)
+            Seva_p.uMat{ik}=utemp(:,ik);
+        end
     end
     Seva_p.Jname='J_evaQuad';
     Seva_p.fname='f_dynEvaQuad';

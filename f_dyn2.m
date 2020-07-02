@@ -5,14 +5,14 @@ end
 lenv=floor(length(vk)/2);
 
 %Generate cost matrices
-[Cpur,Ceva,uP,uE]=generateCostMatricesQuads(Spur,Seva,gameState);
+[Cpur,Ceva,uP,uE]=generateCostMatricesVMquad(Spur,Seva,gameState);
 [nP,nE]=size(Cpur);
 
 %aa=LH2(-Cpur,-Ceva)
 %lhPur=aa{1}
 %lhEva=aa{2}
 %Solve Nash
-[rdeq,flag]=findRDEq(-Cpur,-Ceva)
+[rdeq,flag]=findRDEq(-Cpur,-Ceva);
 outputflag=flag;
 
 if flag==0 %if no unique solution, run LH2 and take E(u) for result
@@ -41,7 +41,7 @@ else %unique solution found
     uPur=Spur.uMat{up_index};
     uEva=Seva.uMat{ue_index};
     uValP=uP{up_index,ue_index};
-    uValE=uE{ue_index,ue_index};
+    uValE=uE{up_index,ue_index};
 end
 
 end

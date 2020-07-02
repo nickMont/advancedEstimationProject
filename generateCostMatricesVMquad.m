@@ -45,7 +45,7 @@ for ij=1:nmodP
         for ik=1:gameState.kMax
             xp=stateP([7 8 10 11],ik);
             xe=stateE([7 8 10 11],ik);
-            if gameState.controlType=='vmquad'
+            if strcmp(Spur.controlType,'vmquad')
                 [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
                 uhatVelMatch = unit_vector(uhatVelMatch);
                 %limit vector to quadrants 1+4
@@ -54,18 +54,37 @@ for ij=1:nmodP
                     uhatVelMatch=-uhatVelMatch;
                 end
                 xPt=states.xPout;
-                xEt=states.xEout;
-                
                 uPtilde=uhatVelMatch*norm(Spur.uMat{ij}(:,ik));
-                uEtilde=uhatVelMatch*norm(Seva.uMat{iL}(:,ik));
-                %update states here
-                
                 xd = stateP(:,ik); xd(9)=0;
                 uP = quadControllerACCONLY(xd, zeros(4,1), 3, [uPtilde;0],0);
+            elseif strcmp(Spur.controlType,'gt_overx')
+                dx = Spur.uMat{ij}(:,ik);
+                des = stateP(:,ik);
+                des(7:8) = des(7:8)+dx;
+                [uP, validNum] = quadController(stateP(:,ik),zeros(4,1),zeros(3,1),des,1,zeros(12,1)); %#ok
+            else
+                error('Failed to present a valid gameState.controlType');
+            end
+            
+            if strcmp(Seva.controlType,'vmquad')
+                [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+                uhatVelMatch = unit_vector(uhatVelMatch);
+                %limit vector to quadrants 1+4
+                theta=atan2(uhatVelMatch(2),uhatVelMatch(1));
+                if theta>pi/2 && theta<3*pi/2
+                    uhatVelMatch=-uhatVelMatch;
+                end
+                xEt=states.xEout;
+                uEtilde=uhatVelMatch*norm(Seva.uMat{iL}(:,ik));
                 xd = stateE(:,ik); xd(9)=0;
                 uE = quadControllerACCONLY(xd, zeros(4,1), 3, [uEtilde;0],0);
-            elseif
-                
+            elseif strcmp(Seva.controlType,'gt_overx')
+                dx = Seva.uMat{iL}(:,ik);
+                des = stateE(:,ik);
+                des(7:8) = des(7:8)+dx;
+                [uE, validNum] = quadController(stateE(:,ik),zeros(4,1),zeros(3,1),des,1,zeros(12,1)); %#ok
+            else
+                error('Failed to present a valid gameState.controlType');
             end
             
             %P
@@ -106,7 +125,6 @@ for iP=1:nmodP
         Jeva(iP,iE)=feval(Seva.Jname,xEvaCell{iP,iE},xPurCell{iP,iE},uEcell{iP,iE},uPcell{iP,iE},Seva.Jparams);
     end
 end
-
 
 
 end
