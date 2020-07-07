@@ -20,7 +20,7 @@ testNN=false;
 u_min=3;
 u_max=6;
 
-iter=1000;
+iter=10000;
 
 uS_S=cell(iter,1);
 xk_S=cell(iter,1);
