@@ -21,9 +21,18 @@ rng(rngseedno);
 % Jp: 1.0408e+04
 % Je: 9.3878e+03
 
+% VMGT w/NN
+% runtime: 1.7013e+03
+% Jp: 1.0318e+04
+% Je: 9.4986e+03
+
 Spur_p.controlType='gt_overx';
 Seva_p.controlType='vmquad';
 % gameState_p.controlType='gt_overx';
+
+load nnTrainSets\nnQuadDyn\network.mat
+gameState_p.tryNN=true;
+gameState_p.NN=net;
 
 umax=0.1;
 

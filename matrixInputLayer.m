@@ -69,8 +69,6 @@ internalLayer = nnet.internal.cnn.layer.ImageInput(...
     normalization, ...
     augmentations);
 
-% Assign AverageImage
-internalLayer.AverageImage = inputArguments.AverageImage;
 
 % Pass the internal layer to a function to construct a user visible image
 % input layer.
@@ -96,7 +94,7 @@ addRequired(p,  'InputSize', @iAssertValidInputSize);
 addParameter(p, 'Normalization', defaultTransform, @(x)any(iCheckAndReturnValidNormalization(x)));
 addParameter(p, 'DataAugmentation', defaultTrainTransform, @(x)~isempty(iCheckAndReturnValidAugmentation(x)));
 addParameter(p, 'Name', defaultName, @iAssertValidLayerName);
-addParameter(p, 'AverageImage', []);
+% addParameter(p, 'AverageImage', []);
 end
 
 function iAssertValidLayerName(name)
@@ -118,8 +116,6 @@ try
     % Make sure integral values are converted to double
     inputArguments.InputSize = double(iMakeIntoRowVectorOfThree(params.InputSize));
     inputArguments.Normalization = iCheckAndReturnValidNormalization(params.Normalization);
-    inputArguments.AverageImage = iCheckAndReturnSingleAverageImage(...
-        params.AverageImage, inputArguments.Normalization, inputArguments.InputSize);
     inputArguments.DataAugmentation = iCheckAndReturnValidAugmentation(params.DataAugmentation);
     inputArguments.Name = char(params.Name); % make sure strings get converted to char vectors
 catch e
@@ -128,14 +124,14 @@ catch e
 end
 end
 
-function averageImage = iCheckAndReturnSingleAverageImage(averageImage, ...
-    normalization, inputSize)    
-if ~isempty(averageImage)    
-    nnet.internal.cnn.layer.paramvalidation.validateZeroCenterMean(...
-        averageImage, normalization, inputSize);
-end
-averageImage = single(averageImage);
-end
+% function averageImage = iCheckAndReturnSingleAverageImage(averageImage, ...
+%     normalization, inputSize)    
+% if ~isempty(averageImage)    
+%     nnet.internal.cnn.layer.paramvalidation.validateZeroCenterMean(...
+%         averageImage, normalization, inputSize);
+% end
+% averageImage = single(averageImage);
+% end
 
 function validSize = iMakeIntoRowVectorOfThree(inputSize)
 if(iIsRowVectorOfTwo(inputSize))

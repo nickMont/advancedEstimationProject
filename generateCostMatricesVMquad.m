@@ -88,8 +88,13 @@ for ij=1:nmodP
             end
             
             %P
-            stateP(:,ik+1) = feval(Spur.fname,stateP(:,ik),uP,gameState.dt,zeros(6,1));
-            stateE(:,ik+1) = feval(Spur.fname,stateE(:,ik),uE,gameState.dt,zeros(6,1));
+            if isfield(gameState,'tryNN')
+                stateP(:,ik+1) = predict(gameState.NN,[stateP(:,ik);uP]);
+                stateE(:,ik+1) = predict(gameState.NN,[stateE(:,ik);uE]);
+            else
+                stateP(:,ik+1) = feval(Spur.fname,stateP(:,ik),uP,gameState.dt,zeros(6,1));
+                stateE(:,ik+1) = feval(Spur.fname,stateE(:,ik),uE,gameState.dt,zeros(6,1));
+            end
             uPm=[uPm uP];
             uEm=[uEm uE];
         end
