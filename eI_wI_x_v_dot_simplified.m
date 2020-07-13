@@ -79,7 +79,6 @@ omegaR=[0;0;0;0];
 
 omegaR=get_control_omegaR();
 
-
 G_prop_mat=[zeros(3,4)
     Wt*I_rotor*[wB(2)*[wdir(1) wdir(2) wdir(3) wdir(4)]
     wB(1)*[wdir(1) wdir(2) wdir(3) wdir(4)]

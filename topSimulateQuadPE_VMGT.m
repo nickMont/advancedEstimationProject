@@ -26,22 +26,34 @@ rng(rngseedno);
 % Jp: 1.0318e+04
 % Je: 9.4986e+03
 
-Spur_p.controlType='gt_overx';
-Seva_p.controlType='vmquad';
+% VMGT BADDIAG
+% JJp =
+%    1.0016e+04
+% JJe =
+%    9.0306e+03
+
+% standard BADDIAG
+% JJp =
+%    1.4131e+04
+% JJe =
+%    5.9543e+03
+   
+Spur.controlType='gt_overx';
+Seva.controlType='gt_overx';
 % gameState_p.controlType='gt_overx';
 
-load nnTrainSets\nnQuadDyn\network.mat
-gameState_p.tryNN=true;
-gameState_p.NN=net;
+% load nnTrainSets\nnQuadDyn\network.mat
+% gameState_p.NN=net;
+gameState.tryNN=false;
 
-umax=0.1;
+umax=.5;
 
 dt=0.1;
 t0=0;
 tmax=10;
 
 %utemp=permn(-2:0.2:2,2)';
-uvec=-1:.1:1;
+uvec=-1:.2:1;
 utemp=permn(uvec,2)';
 upmax=umax;
 umax=upmax;
@@ -57,7 +69,7 @@ xEva=[ewxvPur;ewxvEva];
 xTrue=xPur;
 
 Qpur=zeros(12,12);
-Qpur(7:9,7:9)=5*eye(3);
+Qpur(7:9,7:9)=diag([5,100,5]);
 Qeva=zeros(12,12);
 Qeva(7:9,7:9)=5*eye(3);
 Rpur=eye(4);
@@ -80,47 +92,47 @@ for t=t0:dt:tmax
 %     uEva=uPur;
     
     % Guessing pursuer
-    gameState_p.xPur=xPur(1:12);
-    gameState_p.xEva=xPur(13:24);
-    gameState_p.dt=dt;
-    gameState_p.kMax=1;
-    gameState_p.nu=2;
-    gameState_p.discType='overX';
-    gameState_p.uMaxP=umax;
-    if strcmp(Spur_p.controlType,'vmquad')
+    gameState.xPur=xPur(1:12);
+    gameState.xEva=xPur(13:24);
+    gameState.dt=dt;
+    gameState.kMax=1;
+    gameState.nu=2;
+    gameState.discType='overX';
+    gameState.uMaxP=umax;
+    if strcmp(Spur.controlType,'vmquad')
         for ik=1:length(uvec)
-            Spur_p.uMat{ik}=upmax*uvec(ik);
+            Spur.uMat{ik}=upmax*uvec(ik);
         end
     end
-    if strcmp(Spur_p.controlType,'gt_overx')
+    if strcmp(Spur.controlType,'gt_overx')
         for ik=1:length(utemp)
-            Spur_p.uMat{ik}=utemp(:,ik);
+            Spur.uMat{ik}=utemp(:,ik);
         end
     end
-    Spur_p.Jname='J_purQuad';
-    Spur_p.fname='f_dynPurQuad';
-    Spur_p.Jparams.Q=Qpur;
-    Spur_p.Jparams.Rself=Rpur;
-    Spur_p.Jparams.Ropp=zeros(4,4);
-    Spur_p.UseVelMatch=true;
-    if strcmp(Seva_p.controlType,'vmquad')
+    Spur.Jname='J_purQuad';
+    Spur.fname='f_dynPurQuad';
+    Spur.Jparams.Q=Qpur;
+    Spur.Jparams.Rself=Rpur;
+    Spur.Jparams.Ropp=zeros(4,4);
+    Spur.UseVelMatch=true;
+    if strcmp(Seva.controlType,'vmquad')
         for ik=1:length(uvec)
-            Seva_p.uMat{ik}=upmax*uvec(ik);
+            Seva.uMat{ik}=upmax*uvec(ik);
         end
     end
-    if strcmp(Seva_p.controlType,'gt_overx')
+    if strcmp(Seva.controlType,'gt_overx')
         for ik=1:length(utemp)
-            Seva_p.uMat{ik}=utemp(:,ik);
+            Seva.uMat{ik}=utemp(:,ik);
         end
     end
-    Seva_p.Jname='J_evaQuad';
-    Seva_p.fname='f_dynEvaQuad';
-    Seva_p.Jparams.Q=Qeva;
-    Seva_p.Jparams.Rself=Reva;
-    Seva_p.Jparams.Ropp=zeros(4,4);
-    Seva_p.UseVelMatch=true;
+    Seva.Jname='J_evaQuad';
+    Seva.fname='f_dynEvaQuad';
+    Seva.Jparams.Q=Qeva;
+    Seva.Jparams.Rself=Reva;
+    Seva.Jparams.Ropp=zeros(4,4);
+    Seva.UseVelMatch=true;
     % Propagate to next time step
-    [up,ue,flag,uPSampled,uESampled]=f_dyn2(Spur_p,Seva_p,gameState_p,zeros(4,1));
+    [up,ue,flag,uPSampled,uESampled]=f_dyn2(Spur,Seva,gameState,zeros(4,1));
     uPurTrue=uPSampled;
     uEvaTrue=uESampled;
     
@@ -130,8 +142,8 @@ for t=t0:dt:tmax
     xTrue(13:24)=f_dynEvaQuad(xTrue(13:24),uEvaTrue(:,1),dt,zeros(2,1));
     xD=[zeros(24,1) xTrue];
     
-    Jpur=feval(Spur_p.Jname,xD(1:12,:),xD(13:24,:),uPurTrue,uEvaTrue,Spur_p.Jparams);
-    Jeva=feval(Seva_p.Jname,xD(13:24,:),xD(1:12,:),uEvaTrue,uPurTrue,Seva_p.Jparams);
+    Jpur=feval(Spur.Jname,xD(1:12,:),xD(13:24,:),uPurTrue,uEvaTrue,Spur.Jparams);
+    Jeva=feval(Seva.Jname,xD(13:24,:),xD(1:12,:),uEvaTrue,uPurTrue,Seva.Jparams);
     JJp=JJp+Jpur
     JJe=JJe+Jeva
     
@@ -153,19 +165,19 @@ xE2d=xStore(19:20,indsamp);
 % xElin_x=-6:0.3:0;
 % xElin_y=xElin_x*mx;
 
-figure(1);clf;
-figset
-plot(xP2d(1,:),xP2d(2,:),'-*b');
-hold on
-plot(xE2d(1,:),xE2d(2,:),'-Or');
+% figure(1);clf;
+% figset
+% plot(xP2d(1,:),xP2d(2,:),'-*b');
 % hold on
-% plot(xPlinCompare(1,:),xPlinCompare(2,:),'-.*k');
-% hold on
-% plot(xElinCompare(1,:),xElinCompare(2,:),'-.og');
-axis([-6 2 -6 2])
-xlabel('x-position (m)')
-ylabel('y-position (m)')
-legend('Pursuer trajectory, quad dynamics','Evader trajectory, quad dynamics','Pursuer trajectory, point mass','Evader trajectory, point mass');
-figset
+% plot(xE2d(1,:),xE2d(2,:),'-Or');
+% % hold on
+% % plot(xPlinCompare(1,:),xPlinCompare(2,:),'-.*k');
+% % hold on
+% % plot(xElinCompare(1,:),xElinCompare(2,:),'-.og');
+% axis([-6 2 -6 2])
+% xlabel('x-position (m)')
+% ylabel('y-position (m)')
+% legend('Pursuer trajectory, quad dynamics','Evader trajectory, quad dynamics','Pursuer trajectory, point mass','Evader trajectory, point mass');
+% figset
 
 
