@@ -37,9 +37,17 @@ rng(rngseedno);
 %    1.4131e+04
 % JJe =
 %    5.9543e+03
-   
-Spur.controlType='gt_overx';
-Seva.controlType='gt_overx';
+
+% General control type flags
+useGameTheoreticController=true;
+usePureVelMatchController=false;
+scaleVec=0.8; %magnitude of desired uE control relative to uP control
+vmtune=0.8; %deceleration parameter for VM
+
+% Control type flags, if GT specified
+% select from: vmquad, gt_overx
+Spur.controlType='vmquad';
+Seva.controlType='vmquad';
 % gameState_p.controlType='gt_overx';
 
 % load nnTrainSets\nnQuadDyn\network.mat
@@ -72,7 +80,7 @@ Qpur=zeros(12,12);
 Qpur(7:9,7:9)=diag([5,100,5]);
 Qeva=zeros(12,12);
 Qeva(7:9,7:9)=5*eye(3);
-Rpur=eye(4);
+Rpur=5*eye(4);
 Reva=eye(4);
 xStore=xPur;
 
@@ -86,55 +94,69 @@ tic
 for t=t0:dt:tmax
     n=n+1;
     
-%     upurset=umin:du:umax;
-%     %uPur=combvec(upurset,upurset,upurset,upurset);
-%     uPur=combvec(upurset,upurset,upurset);
-%     uEva=uPur;
-    
-    % Guessing pursuer
-    gameState.xPur=xPur(1:12);
-    gameState.xEva=xPur(13:24);
-    gameState.dt=dt;
-    gameState.kMax=1;
-    gameState.nu=2;
-    gameState.discType='overX';
-    gameState.uMaxP=umax;
-    if strcmp(Spur.controlType,'vmquad')
-        for ik=1:length(uvec)
-            Spur.uMat{ik}=upmax*uvec(ik);
-        end
-    end
-    if strcmp(Spur.controlType,'gt_overx')
-        for ik=1:length(utemp)
-            Spur.uMat{ik}=utemp(:,ik);
-        end
-    end
+    %     upurset=umin:du:umax;
+    %     %uPur=combvec(upurset,upurset,upurset,upurset);
+    %     uPur=combvec(upurset,upurset,upurset);
+    %     uEva=uPur;
     Spur.Jname='J_purQuad';
-    Spur.fname='f_dynPurQuad';
+    Seva.Jname='J_evaQuad';
     Spur.Jparams.Q=Qpur;
     Spur.Jparams.Rself=Rpur;
     Spur.Jparams.Ropp=zeros(4,4);
-    Spur.UseVelMatch=true;
-    if strcmp(Seva.controlType,'vmquad')
-        for ik=1:length(uvec)
-            Seva.uMat{ik}=upmax*uvec(ik);
-        end
-    end
-    if strcmp(Seva.controlType,'gt_overx')
-        for ik=1:length(utemp)
-            Seva.uMat{ik}=utemp(:,ik);
-        end
-    end
-    Seva.Jname='J_evaQuad';
-    Seva.fname='f_dynEvaQuad';
     Seva.Jparams.Q=Qeva;
     Seva.Jparams.Rself=Reva;
     Seva.Jparams.Ropp=zeros(4,4);
-    Seva.UseVelMatch=true;
-    % Propagate to next time step
-    [up,ue,flag,uPSampled,uESampled]=f_dyn2(Spur,Seva,gameState,zeros(4,1));
-    uPurTrue=uPSampled;
-    uEvaTrue=uESampled;
+    
+    if useGameTheoreticController
+        % Guessing pursuer
+        gameState.xPur=xPur(1:12);
+        gameState.xEva=xPur(13:24);
+        gameState.dt=dt;
+        gameState.kMax=1;
+        gameState.nu=2;
+        gameState.discType='overX';
+        gameState.uMaxP=umax;
+        if strcmp(Spur.controlType,'vmquad')
+            for ik=1:length(uvec)
+                Spur.uMat{ik}=upmax*uvec(ik);
+            end
+        end
+        if strcmp(Spur.controlType,'gt_overx')
+            for ik=1:length(utemp)
+                Spur.uMat{ik}=utemp(:,ik);
+            end
+        end
+        Spur.Jname='J_purQuad';
+        Spur.fname='f_dynPurQuad';
+        Spur.UseVelMatch=true;
+        if strcmp(Seva.controlType,'vmquad')
+            for ik=1:length(uvec)
+                Seva.uMat{ik}=upmax*uvec(ik);
+            end
+        end
+        if strcmp(Seva.controlType,'gt_overx')
+            for ik=1:length(utemp)
+                Seva.uMat{ik}=utemp(:,ik);
+            end
+        end
+        Seva.Jname='J_evaQuad';
+        Seva.fname='f_dynEvaQuad';
+        Seva.UseVelMatch=true;
+        % Propagate to next time step
+        [up,ue,flag,uPSampled,uESampled]=f_dyn2(Spur,Seva,gameState,zeros(4,1));
+        uPurTrue=uPSampled;
+        uEvaTrue=uESampled;
+    elseif usePureVelMatchController
+        xp=[xTrue(7:8);xTrue(10:11)];xe=[xTrue(19:20);xTrue(22:23)];
+        uP=vmRGVO_tune(xp,xe,umax,2,dt,zeros(2,1),vmtune);
+        uE=-scaleVec*uP;
+        xd = xPur(13:24); xd(9)=0;
+        uEvaTrue = quadControllerACCONLY(xd, zeros(4,1), 3, [uE;0],0);
+        xd = xPur(1:12); xd(9)=0;
+        uPurTrue = quadControllerACCONLY(xd, zeros(4,1), 3, [uP;0],0);
+    else
+        error('No controller specified')
+    end
     
     uPhist=[uPhist uPurTrue];
     uEhist=[uEhist uEvaTrue];

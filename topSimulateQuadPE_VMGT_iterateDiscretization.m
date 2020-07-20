@@ -4,12 +4,16 @@ beep off;
 rngseedno=457;
 rng(rngseedno);
 
-discSteps=4:2:20;
+discSteps=5:1:25;
 nstep=length(discSteps);
 tRun_S=cell(nstep,1);
 Jp_S=cell(nstep,1);
 Je_S=cell(nstep,1);
+x_S=cell(nstep,1);
+
 for iter=1:nstep
+    
+    currentStepsize=discSteps(iter)
     
     Spur.controlType='gt_overx';
     Seva.controlType='gt_overx';
@@ -21,9 +25,9 @@ for iter=1:nstep
     
     umax=.5;
     
-    dt=0.1;
+    dt=0.05;
     t0=0;
-    tmax=5;
+    tmax=10;
     
     du=2/(discSteps(iter)-2);
     uvec=-1:du:1;
@@ -131,6 +135,7 @@ for iter=1:nstep
     tRun_S{iter,1}=tTotal;
     Jp_S{iter,1}=JJp;
     Je_S{iter,1}=JJe;
+    x_S{iter,1}=xStore;
     
 end
 

@@ -108,7 +108,7 @@ for iL=1:nmodE
         end
         xEt=states.xEout;
         uEtilde=uhatVelMatch*norm(Seva.uMat{iL}(:,1));
-        xd = stateE(:,ik); xd(9)=0;
+        xd = stateE(:,1); xd(9)=0;
         uE = quadControllerACCONLY(xd, zeros(4,1), 3, [uEtilde;0],0);
     elseif strcmp(Seva.controlType,'gt_overx')
         dx = Seva.uMat{iL}(:,1);
