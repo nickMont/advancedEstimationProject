@@ -100,8 +100,8 @@ cholExcitePlusOne=0.05;
 cholExciteDropOrder=0.00;
 orderExcite=0.5;
 
-wStore{1}=wloc;
-xPartStore{1}=xPur_part;
+% wStore{1}=wloc;
+% xPartStore{1}=xPur_part;
 xPurS{1}=xPur;
 xEvaS{1}=xEva;
 xTrueS{1}=xTrue;
@@ -109,8 +109,9 @@ xTrueS{1}=xTrue;
 evaderVec=1:numEvaders;
 pursuerVec=1:numPursuers;
 evaderVec=[evaderVec 0];
-pursuerVec=[pursuerVec 0)];
-
+pursuerVec=[pursuerVec 0];
+Jp0=0;
+Je0=0;
 
 
 
@@ -297,14 +298,16 @@ if plotEndFlag==1
         xP(:,ijk)=xTrueS{ijk}(1:2); xE(:,ijk)=xTrueS{ijk}(5:6);
     end
     figure(3);clf;
-    plot(xP(1,:),xP(2,:),'-xr');
+    plot(xE(1,:),xE(2,:),'-or');
     hold on
-    plot(xE(1,:),xE(2,:),'-ob');
-    title('Interceptor using velocity matching vs unaware evader');
+    plot(xP(1,:),xP(2,:),'-xb');
+    figset
+    load temp.mat
+    plot(xPtilde(1,:),xPtilde(2,:),'-xk');
     xlabel('East displacement (m)');
     ylabel('North displacement (m)');
-    legend('Pursuer','Evader');
+    legend('Evader','Pursuer, GT','Pursuer, VM');
     axis([0 90 0 10])
     figset
-    
 end
+

@@ -10,7 +10,6 @@ function [mm,outcomeRow,outcomeCol]=minimax2(A,B)
                                          % (P1 loses no more than minimaxvalue1, no matter what strategy 
 										 % P2 uses)
 
-
 % Second, compute the security strategy for player 2 (note difference from computation of security
 % strategies for matrix games since both payoff matrices are "loss" matrices, and note that computation of the
 % minimax strategies is completely independent)
@@ -23,6 +22,5 @@ function [mm,outcomeRow,outcomeCol]=minimax2(A,B)
 outcomeRow=A(secstratR,secstratC);
 outcomeCol=B(secstratR,secstratC);
 mm=[secstratR;secstratC];
-
 
 end

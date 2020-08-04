@@ -49,6 +49,8 @@ vmtune=0.8; %deceleration parameter for VM
 Spur.controlType='vmquad';
 Seva.controlType='vmquad';
 % gameState_p.controlType='gt_overx';
+omega_hover=4.95;
+nmod=3;
 
 % load nnTrainSets\nnQuadDyn\network.mat
 % gameState_p.NN=net;
@@ -58,10 +60,11 @@ umax=.5;
 
 dt=0.1;
 t0=0;
-tmax=10;
+tmax=5;
 
 %utemp=permn(-2:0.2:2,2)';
-uvec=-1:.2:1;
+du=0.2; %discretization size
+uvec=-1:du:1;
 utemp=permn(uvec,2)';
 upmax=umax;
 umax=upmax;
@@ -77,10 +80,10 @@ xEva=[ewxvPur;ewxvEva];
 xTrue=xPur;
 
 Qpur=zeros(12,12);
-Qpur(7:9,7:9)=diag([5,100,5]);
+Qpur(7:9,7:9)=diag([5,5,0]);
 Qeva=zeros(12,12);
-Qeva(7:9,7:9)=5*eye(3);
-Rpur=5*eye(4);
+Qeva(7:8,7:8)=5*eye(2);
+Rpur=eye(4);
 Reva=eye(4);
 xStore=xPur;
 
@@ -90,8 +93,10 @@ uEhist=[];
 JJp=0;
 JJe=0;
 
-xhatE=ewxvEva;
-PhatE=0.001*eye(length(ewxvEva));
+xhatE=repmat(ewxvEva,[1 nmod]);
+PhatE=repmat(0.001*eye(length(ewxvEva)),[1 1 nmod]);
+mu=1/nmod*ones(nmod,1);
+muHist=mu;
 Rk=0.1*eye(length(ewxvEva));
 
 tic
@@ -147,9 +152,10 @@ for t=t0:dt:tmax
         Seva.fname='f_dynEvaQuad';
         Seva.UseVelMatch=true;
         % Propagate to next time step
-        [up,ue,flag,uPSampled,uESampled]=f_dyn2(Spur,Seva,gameState,zeros(4,1));
+        [up,ue,flag,uPSampled,uESampled,Sminimax]=f_dyn2(Spur,Seva,gameState,zeros(4,1));
         uPurTrue=uPSampled;
         uEvaTrue=uESampled;
+        uEvaNash=uESampled;
     elseif usePureVelMatchController
         xp=[xTrue(7:8);xTrue(10:11)];xe=[xTrue(19:20);xTrue(22:23)];
         uP=vmRGVO_tune(xp,xe,umax,2,dt,zeros(2,1),vmtune);
@@ -162,6 +168,8 @@ for t=t0:dt:tmax
         error('No controller specified')
     end
     
+%     uEvaTrue=uEvaTrue+[.2;.2;-.2;-.2];
+    
     uPhist=[uPhist uPurTrue];
     uEhist=[uEhist uEvaTrue];
     xTrue(1:12)=f_dynPurQuad(xTrue(1:12),uPurTrue(:,1),dt,zeros(2,1));
@@ -173,12 +181,46 @@ for t=t0:dt:tmax
     JJp=JJp+Jpur
     JJe=JJe+Jeva
     
-    [xhatEp1,Pp1]=ukfPropagate(xhatE,PhatE,uEvaTrue,[],dt,'f_dynEvaQuad');
+    lambdaTemp=-1*ones(nmod,1);
+    for ij=1:nmod
+        uEvaTemp=[];
+        Ru=[];
+        if ij==1
+            uEvaTemp=uEvaNash;
+            Ru=0.01*du*eye(4);
+        elseif ij==2
+            uEvaTemp=omega_hover;
+            Ru=1*eye(4);
+        elseif ij==3
+            loadPointMassControlParams;
+            Ru=0.01*du*eye(4);
+        elseif ij==4
+            uEvaTemp=Sminimax.uE;
+            Ru=0.01*eye(4);
+        end
+        [xhatEp1,Pp1]=ukfPropagate(xhatE(:,ij),PhatE(:,:,ij),uEvaTemp,Ru,dt,'f_dynEvaQuad');
+        
+        zMeas=xTrue(13:24)+chol(Rk)*rand(12,1);
+        [xhatE(:,ij),PhatE(:,:,ij),nu,Sk,Wk]=kfMeasure(xhatEp1,Pp1,zMeas,eye(length(ewxvEva)),Rk);
+        
+        Skt=triu(Sk); Skt=Skt'+Skt; Skt(1:13:end)=diag(Sk); %forces symmetry
+        normpEval= mvnpdf(nu,zeros(length(ewxvEva),1),Skt);
+        if normpEval<=1e-8
+            normpdf_eval=1e-8;
+        end
+        lambdaTemp(ij)=normpEval;
+    end
+    muTemp=mu;
+    for ij=1:nmod
+        muTemp(ij)=lambdaTemp(ij)*mu(ij)/dot(lambdaTemp,mu);
+        if muTemp(ij)<1e-8
+            muTemp(ij)=1e-8;
+        end
+    end
+    mu=muTemp/sum(muTemp);
+    muHist=[muHist mu];
     
-    zMeas=xTrue(13:24)+chol(Rk)*rand(12,1);
-    [xhatE,PhatE]=kfMeasure(xhatEp1,Pp1,zMeas,eye(length(ewxvEva)),Rk);
-    
-    xhatE-xTrue(13:24)
+%     xhatE(:,1)-xTrue(13:24)
     
     noise=zeros(24,1);
     xEva=xTrue+noise;
@@ -189,7 +231,7 @@ end
 tTotal=toc
 
 %     load quaddat.mat;
-indsamp=1:5:100;
+indsamp=1:5:50;
 xP2d=xStore(7:8,indsamp);
 xE2d=xStore(19:20,indsamp);
 % mx=(xP2d(2,1)-xE2d(2,1))/(xP2d(1,1)-xE2d(1,1));
@@ -207,10 +249,28 @@ plot(xE2d(1,:),xE2d(2,:),'-Or');
 % plot(xPlinCompare(1,:),xPlinCompare(2,:),'-.*k');
 % hold on
 % plot(xElinCompare(1,:),xElinCompare(2,:),'-.og');
-axis([-15 2 -6 2])
+axis([-6 2 -6 2])
 xlabel('x-position (m)')
 ylabel('y-position (m)')
-legend('Pursuer, hybrid','Evader, hybrid');
+legend('Pursuer trajectory','Evader trajectory');
 figset
+
+figset
+figure(2);clf;
+plottype=['k-x','k-*','k-0'];
+plot(dt*(0:24),muHist(1,1:25),'k-x')
+hold on
+plot(dt*(0:24),muHist(2,1:25),'k-*')
+hold on
+if nmod>=3
+plot(dt*(0:24),muHist(3,1:25),'k-o')
+end
+if nmod>=4
+plot(dt*(0:24),muHist(4,1:25),'k-0')
+end
+figset
+xlabel('Time Elapsed (s)')
+ylabel('Model Probability')
+%legend('Nash strategy','Non-Nash strategy') %update per side
 
 

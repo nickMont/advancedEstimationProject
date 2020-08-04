@@ -8,7 +8,7 @@ Seva_p.controlType='vmquad';
 nmax=1000;
 
 load nnTrainSets\nnQuadDyn\network.mat
-gameState_p.tryNN=true;
+gameState_p.tryNN=false;
 gameState_p.NN=net;
 
 umax=0.1;

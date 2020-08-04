@@ -1,12 +1,18 @@
-function [uPur,uEva,outputflag,uValP,uValE] = f_dyn2(Spur,Seva,gameState,vk)
+function [uPur,uEva,outputflag,uValP,uValE,Sminimax] = f_dyn2(Spur,Seva,gameState,vk)
 if nargin<=3
     vk=zeros(100,1);
 end
 lenv=floor(length(vk)/2);
+Sminimax=[];
 
 %Generate cost matrices
 [Cpur,Ceva,uP,uE]=generateCostMatricesVMquad(Spur,Seva,gameState);
 [nP,nE]=size(Cpur);
+
+[indminimax,~,~]=minimax2(Cpur,Ceva);
+Sminimax.index=indminimax;
+Sminimax.uP=uP{indminimax(1),indminimax(2)};
+Sminimax.uE=uE{indminimax(1),indminimax(2)};
 
 %aa=LH2(-Cpur,-Ceva)
 %lhPur=aa{1}
