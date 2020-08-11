@@ -68,6 +68,8 @@ for ij=1:nmodP
         des = stateP(:,1);
         des(7:8) = des(7:8)+dx;
         [uP, validNum] = quadController(stateP(:,1),zeros(4,1),zeros(3,1),des,1,zeros(12,1)); %#ok
+    elseif strcmp(Spur.controlType,'gt_overu')
+        uP=Spur.uMat{ij}(:,1);
     else
         error('Failed to present a valid gameState.controlType');
     end
@@ -115,6 +117,8 @@ for iL=1:nmodE
         des = stateE(:,1);
         des(7:8) = des(7:8)+dx;
         [uE, validNum] = quadController(stateE(:,1),zeros(4,1),zeros(3,1),des,1,zeros(12,1)); %#ok
+    elseif strcmp(Seva.controlType,'gt_overu')
+        uE=Seva.uMat{iL}(:,1);
     else
         error('Failed to present a valid gameState.controlType');
     end
@@ -166,6 +170,8 @@ if gameState.kMax>1
                     des = stateP(:,ik);
                     des(7:8) = des(7:8)+dx;
                     [uP, validNum] = quadController(stateP(:,ik),zeros(4,1),zeros(3,1),des,1,zeros(12,1)); %#ok
+                elseif strcmp(Spur.controlType,'gt_overu')
+                    uP=Spur.uMat{ij}(:,ik);
                 else
                     error('Failed to present a valid gameState.controlType');
                 end
@@ -187,6 +193,8 @@ if gameState.kMax>1
                     des = stateE(:,ik);
                     des(7:8) = des(7:8)+dx;
                     [uE, validNum] = quadController(stateE(:,ik),zeros(4,1),zeros(3,1),des,1,zeros(12,1)); %#ok
+                elseif strcmp(Seva.controlType,'gt_overu')
+                    uE=Seva.uMat{ij}(:,ik);
                 else
                     error('Failed to present a valid gameState.controlType');
                 end

@@ -1,4 +1,4 @@
-function [uPur,uEva,outputflag,uValP,uValE,Sminimax] = f_dyn2(Spur,Seva,gameState,vk)
+function [uPur,uEva,outputflag,uValP,uValE,Sminimax,Smisc] = f_dyn2(Spur,Seva,gameState,vk)
 if nargin<=3
     vk=zeros(100,1);
 end
@@ -33,6 +33,8 @@ if flag==0 %if no unique solution, run LH2 and take E(u) for result
     %     end
     uPur=sol{1};
     uEva=sol{2};
+    [~,indexP]=max(uPur);
+    [~,indexE]=max(uEva);
     uValP=[];
     uValE=[];
     if ~(isempty(uP))
@@ -41,6 +43,8 @@ if flag==0 %if no unique solution, run LH2 and take E(u) for result
         uInd=randsample(nE,1,true,uEva);
         uValE=uE{uInd};
     end
+    Smisc.uPair=[sol{1};sol{2}];
+    Smisc.uPairMax=[indexP;indexE];
 else %unique solution found
     up_index=rdeq(1,1);
     ue_index=rdeq(2,1);
@@ -48,6 +52,8 @@ else %unique solution found
     uEva=Seva.uMat{ue_index};
     uValP=uP{up_index,ue_index};
     uValE=uE{up_index,ue_index};
+    Smisc.uPair=[up_index;ue_index];
+    Smisc.uPairMax=Smisc.uPair;
 end
 
 end

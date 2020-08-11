@@ -46,8 +46,8 @@ vmtune=0.8; %deceleration parameter for VM
 
 % Control type flags, if GT specified
 % select from: vmquad, gt_overx
-Spur.controlType='vmquad';
-Seva.controlType='vmquad';
+Spur.controlType='gt_overx';
+Seva.controlType='gt_overx';
 % gameState_p.controlType='gt_overx';
 omega_hover=4.95;
 nmod=3;
@@ -57,6 +57,7 @@ nmod=3;
 gameState.tryNN=false;
 
 umax=.5;
+uLmax=8; %max low-level control
 
 dt=0.1;
 t0=0;
@@ -70,6 +71,11 @@ upmax=umax;
 umax=upmax;
 utype.radius=upmax;
 utemp=mapUtempToUvec(utemp,"circle",utype);
+
+%Finer version for disc optimizer
+uvecFine=-1:du/2:1;
+utempFine=permn(uvecFine,2)';
+utempFine=mapUtempToUvec(utempFine,"circle",utype);
 
 n=0;
 z31=zeros(3,1);
@@ -112,9 +118,11 @@ for t=t0:dt:tmax
     Spur.Jparams.Q=Qpur;
     Spur.Jparams.Rself=Rpur;
     Spur.Jparams.Ropp=zeros(4,4);
+    Spur.uLmax=uLmax;
     Seva.Jparams.Q=Qeva;
     Seva.Jparams.Rself=Reva;
     Seva.Jparams.Ropp=zeros(4,4);
+    Seva.uLmax=uLmax;
     
     if useGameTheoreticController
         % Guessing pursuer
@@ -152,10 +160,19 @@ for t=t0:dt:tmax
         Seva.fname='f_dynEvaQuad';
         Seva.UseVelMatch=true;
         % Propagate to next time step
-        [up,ue,flag,uPSampled,uESampled,Sminimax]=f_dyn2(Spur,Seva,gameState,zeros(4,1));
+        [up,ue,flag,uPSampled,uESampled,Sminimax,Smisc]=f_dyn2(Spur,Seva,gameState,zeros(4,1));
         uPurTrue=uPSampled;
         uEvaTrue=uESampled;
         uEvaNash=uESampled;
+        
+
+        SInput.Spur=Spur; SInput.Seva=Seva;
+        SInput.Seva.uMat={}; SInput.Seva.uMat{1}=uEvaTrue; SInput.Seva.controlType='gt_overu';
+        SInput.utemp=utempFine; SInput.uvec=uvecFine; SInput.umax=umax;
+        SInput.gameState=gameState;
+        SInput.player='pur'; SInput.type='discretize';
+        u2=optimizeGivenEnemyControl(SInput);
+        
     elseif usePureVelMatchController
         xp=[xTrue(7:8);xTrue(10:11)];xe=[xTrue(19:20);xTrue(22:23)];
         uP=vmRGVO_tune(xp,xe,umax,2,dt,zeros(2,1),vmtune);

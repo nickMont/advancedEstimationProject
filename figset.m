@@ -1,7 +1,7 @@
 % figset
 % Set font size of figures for printing
 
-fs = 14;
+fs = 12;
 fn = 'times new roman';
 %fn = 'helvetica';
 %fn = 'courier new';
