@@ -165,14 +165,13 @@ for t=t0:dt:tmax
         uEvaTrue=uESampled;
         uEvaNash=uESampled;
         
-
 %         SInput.Spur=Spur; SInput.Seva=Seva;
 %         SInput.Seva.uMat={}; SInput.Seva.uMat{1}=uEvaTrue; SInput.Seva.controlType='gt_overu';
 %         SInput.utemp=utempFine; SInput.uvec=uvecFine; SInput.umax=umax;
 %         SInput.gameState=gameState;
 %         SInput.player='pur'; SInput.type='discretize';
 %         u2=optimizeGivenEnemyControl(SInput);
-        
+
     elseif usePureVelMatchController
         xp=[xTrue(7:8);xTrue(10:11)];xe=[xTrue(19:20);xTrue(22:23)];
         uP=vmRGVO_tune(xp,xe,umax,2,dt,zeros(2,1),vmtune);
@@ -185,6 +184,50 @@ for t=t0:dt:tmax
         error('No controller specified')
     end
     
+    uEvaTempStack=cell(nmod,1);
+    RuStack=cell(nmod,1);
+    uEvaTypeStack=cell(nmod,1);
+    
+    for ij=1:nmod
+        uEvaTemp=[];
+        Ru=[];
+        if ij==1
+            uEvaTemp=uEvaNash;
+            Ru=0.01*du*eye(4);
+            uEvaTypeStack{ij,1}='nash';
+        elseif ij==2
+            uEvaTemp=omega_hover*ones(4,1);
+            Ru=1*eye(4);
+            uEvaTypeStack{ij,1}='hover';
+        elseif ij==3
+            loadPointMassControlParams;
+            Ru=0.01*du*eye(4);
+            uEvaTypeStack{ij,1}='nash-PM';
+        elseif ij==4
+            uEvaTemp=Sminimax.uE;
+            Ru=0.01*eye(4);
+            uEvaTypeStack{ij,1}='minimax';
+        end
+        uEvaTempStack{ij,1}=uEvaTemp;
+        RuStack{ij,1}=Ru;
+    end
+    
+%     % Generate best responses
+%     for ij=1:nmod
+%         if strcmp(uEvaTypeStack{ij,1},'nash')
+%             u2=uPurTrue;
+%         elseif strcmp(uEvaTypeStack{ij,1},'minimax')
+%             u2=Sminimax.uP;
+%         else
+%             SInput.Spur=Spur; SInput.Seva=Seva;
+%             SInput.Seva.uMat={}; SInput.Seva.uMat{1}=uEvaTempStack{ij,1}; SInput.Seva.controlType='gt_overu';
+%             SInput.utemp=utempFine; SInput.uvec=uvecFine; SInput.umax=umax;
+%             SInput.gameState=gameState;
+%             SInput.player='pur'; SInput.type='discretize';
+%             u2=optimizeGivenEnemyControl(SInput);
+%         end
+%     end
+    
 %     uEvaTrue=uEvaTrue+[.2;.2;-.2;-.2];
     
     uPhist=[uPhist uPurTrue];
@@ -192,6 +235,8 @@ for t=t0:dt:tmax
     xTrue(1:12)=f_dynPurQuad(xTrue(1:12),uPurTrue(:,1),dt,zeros(2,1));
     xTrue(13:24)=f_dynEvaQuad(xTrue(13:24),uEvaTrue(:,1),dt,zeros(2,1));
     xD=[zeros(24,1) xTrue];
+
+    zMeas=xTrue(13:24)+chol(Rk)*rand(12,1);
     
     Jpur=feval(Spur.Jname,xD(1:12,:),xD(13:24,:),uPurTrue,uEvaTrue,Spur.Jparams);
     Jeva=feval(Seva.Jname,xD(13:24,:),xD(1:12,:),uEvaTrue,uPurTrue,Seva.Jparams);
@@ -200,28 +245,21 @@ for t=t0:dt:tmax
     
     lambdaTemp=-1*ones(nmod,1);
     for ij=1:nmod
-        uEvaTemp=[];
-        Ru=[];
-        if ij==1
-            uEvaTemp=uEvaNash;
-            Ru=0.01*du*eye(4);
-        elseif ij==2
-            uEvaTemp=omega_hover;
-            Ru=1*eye(4);
-        elseif ij==3
-            loadPointMassControlParams;
-            Ru=0.01*du*eye(4);
-        elseif ij==4
-            uEvaTemp=Sminimax.uE;
-            Ru=0.01*eye(4);
+        uEvaMMF=uEvaTempStack{ij};
+        RuMMF=RuStack{ij};
+        
+        Paug=PhatE(:,:,ij); Qk=RuMMF;
+        if min(eig(Paug))>0 %check for impossible models
+            % Propagate
+            [xhatEp1,Pp1]=ukfPropagate(xhatE(:,ij),PhatE(:,:,ij),uEvaMMF,RuMMF,dt,'f_dynEvaQuad');
+            
+            % Measure
+            [xhatE(:,ij),PhatE(:,:,ij),nu,Sk,Wk]=kfMeasure(xhatEp1,Pp1,zMeas,eye(length(ewxvEva)),Rk);
+            Skt=triu(Sk); Skt=Skt'+Skt; Skt(1:13:end)=diag(Sk); %forces symmetry
+            normpEval= mvnpdf(nu,zeros(length(ewxvEva),1),Skt);
+        else
+            normpEval=1e-20;
         end
-        [xhatEp1,Pp1]=ukfPropagate(xhatE(:,ij),PhatE(:,:,ij),uEvaTemp,Ru,dt,'f_dynEvaQuad');
-        
-        zMeas=xTrue(13:24)+chol(Rk)*rand(12,1);
-        [xhatE(:,ij),PhatE(:,:,ij),nu,Sk,Wk]=kfMeasure(xhatEp1,Pp1,zMeas,eye(length(ewxvEva)),Rk);
-        
-        Skt=triu(Sk); Skt=Skt'+Skt; Skt(1:13:end)=diag(Sk); %forces symmetry
-        normpEval= mvnpdf(nu,zeros(length(ewxvEva),1),Skt);
         if normpEval<=1e-8
             normpdf_eval=1e-8;
         end
@@ -289,3 +327,5 @@ figset
 xlabel('Time Elapsed (s)')
 ylabel('Model Probability')
 %legend('Nash strategy','Non-Nash strategy') %update per side
+
+
