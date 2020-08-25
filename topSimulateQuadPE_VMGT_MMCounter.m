@@ -1,6 +1,8 @@
 clear;clc;
 beep off;
 
+%note use addpath('name') to add folders to path
+
 rngseedno=457;
 rng(rngseedno);
 
@@ -11,32 +13,16 @@ rng(rngseedno);
 %  compatible
 
 
-% standard controller:
-% runtime: 5.0165e+03
-% Jp: 1.0120e+04
-% Je: 9.6958e+03
+% Natural (pure nash) costs:
+% Jp = 5.2425e+03
+% Je = 4.7274e+03
 
-% VMGT:
-% runtime: 476.6351
-% Jp: 1.0408e+04
-% Je: 9.3878e+03
+% Best response costs:
+% Jp = 5.2425e+03
+% Je = 4.7274e+03
 
-% VMGT w/NN
-% runtime: 1.7013e+03
-% Jp: 1.0318e+04
-% Je: 9.4986e+03
-
-% VMGT BADDIAG
-% JJp =
-%    1.0016e+04
-% JJe =
-%    9.0306e+03
-
-% standard BADDIAG
-% JJp =
-%    1.4131e+04
-% JJe =
-%    5.9543e+03
+% Use best response by taking mean of rotor speeds
+flagUseMeanBestResponse=false;
 
 % General control type flags
 useGameTheoreticController=true;
@@ -46,11 +32,12 @@ vmtune=0.8; %deceleration parameter for VM
 
 % Control type flags, if GT specified
 % select from: vmquad, gt_overx
-Spur.controlType='gt_overx';
-Seva.controlType='gt_overx';
+Spur.controlType='vmquad';
+Seva.controlType='vmquad';
 % gameState_p.controlType='gt_overx';
 omega_hover=4.95;
-nmod=3;
+
+nmod=5;
 
 % load nnTrainSets\nnQuadDyn\network.mat
 % gameState_p.NN=net;
@@ -62,6 +49,9 @@ uLmax=8; %max low-level control
 dt=0.1;
 t0=0;
 tmax=5;
+
+% Evader control type (truth parameter)
+evaControlType=1*ones(length(0:dt:tmax),1);
 
 %utemp=permn(-2:0.2:2,2)';
 du=0.2; %discretization size
@@ -164,15 +154,8 @@ for t=t0:dt:tmax
         uPurTrue=uPSampled;
         uEvaTrue=uESampled;
         uEvaNash=uESampled;
-        
-%         SInput.Spur=Spur; SInput.Seva=Seva;
-%         SInput.Seva.uMat={}; SInput.Seva.uMat{1}=uEvaTrue; SInput.Seva.controlType='gt_overu';
-%         SInput.utemp=utempFine; SInput.uvec=uvecFine; SInput.umax=umax;
-%         SInput.gameState=gameState;
-%         SInput.player='pur'; SInput.type='discretize';
-%         u2=optimizeGivenEnemyControl(SInput);
-
     elseif usePureVelMatchController
+        %velmatchScript
         xp=[xTrue(7:8);xTrue(10:11)];xe=[xTrue(19:20);xTrue(22:23)];
         uP=vmRGVO_tune(xp,xe,umax,2,dt,zeros(2,1),vmtune);
         uE=-scaleVec*uP;
@@ -192,41 +175,59 @@ for t=t0:dt:tmax
         uEvaTemp=[];
         Ru=[];
         if ij==1
-            uEvaTemp=uEvaNash;
-            Ru=0.01*du*eye(4);
-            uEvaTypeStack{ij,1}='nash';
+            vmgtScript;
+            uEvaTemp=uEvaVMGT;
+            Ru=0.05*du*eye(4);
+            uEvaTypeStack{ij,1}='nash-vmgt';
         elseif ij==2
-            uEvaTemp=omega_hover*ones(4,1);
-            Ru=1*eye(4);
-            uEvaTypeStack{ij,1}='hover';
+            gtfullScript;
+            uEvaTemp=uEvaGT;
+            Ru=0.01*du*eye(4);
+            uEvaTypeStack{ij,1}='nash-full';
         elseif ij==3
             loadPointMassControlParams;
             Ru=0.01*du*eye(4);
             uEvaTypeStack{ij,1}='nash-PM';
         elseif ij==4
-            uEvaTemp=Sminimax.uE;
-            Ru=0.01*eye(4);
-            uEvaTypeStack{ij,1}='minimax';
+            velmatchScript;
+            uEvaTemp=uEvaVM;
+            Ru=0.05*eye(4);
+            uEvaTypeStack{ij,1}='vm';
+        elseif ij==5
+            uEvaTemp=omega_hover*ones(4,1);
+            Ru=1*eye(4);
+            uEvaTypeStack{ij,1}='hover';
         end
         uEvaTempStack{ij,1}=uEvaTemp;
         RuStack{ij,1}=Ru;
     end
     
-%     % Generate best responses
-%     for ij=1:nmod
-%         if strcmp(uEvaTypeStack{ij,1},'nash')
-%             u2=uPurTrue;
-%         elseif strcmp(uEvaTypeStack{ij,1},'minimax')
-%             u2=Sminimax.uP;
-%         else
-%             SInput.Spur=Spur; SInput.Seva=Seva;
-%             SInput.Seva.uMat={}; SInput.Seva.uMat{1}=uEvaTempStack{ij,1}; SInput.Seva.controlType='gt_overu';
-%             SInput.utemp=utempFine; SInput.uvec=uvecFine; SInput.umax=umax;
-%             SInput.gameState=gameState;
-%             SInput.player='pur'; SInput.type='discretize';
-%             u2=optimizeGivenEnemyControl(SInput);
-%         end
-%     end
+%    uEvaTrue=uEvaTemp{evaControlType(n,1)};
+    
+    % Generate best responses
+    uPurBestResponseStack=cell(nmod,1);
+    for ij=1:nmod
+        if strcmp(uEvaTypeStack{ij,1},'nash')
+            u2=uPurTrue;
+        elseif strcmp(uEvaTypeStack{ij,1},'minimax')
+            u2=Sminimax.uP;
+        else
+            SInput.Spur=Spur; SInput.Seva=Seva;
+            SInput.Seva.uMat={}; SInput.Seva.uMat{1}=uEvaTempStack{ij,1}; SInput.Seva.controlType='gt_overu';
+            SInput.utemp=utempFine; SInput.uvec=uvecFine; SInput.umax=umax;
+            SInput.gameState=gameState;
+            SInput.player='pur'; SInput.type='discretize';
+            u2=optimizeGivenEnemyControl(SInput);
+        end
+        uPurBestResponseStack{ij,1}=u2;
+    end
+    
+    if flagUseMeanBestResponse
+        uPurTrue=zeros(4,1);
+        for ij=1:nmod
+            uPurTrue=uPurTrue+mu(ij)*uPurBestResponseStack{ij,1};
+        end
+    end
     
 %     uEvaTrue=uEvaTrue+[.2;.2;-.2;-.2];
     
@@ -321,11 +322,16 @@ if nmod>=3
 plot(dt*(0:24),muHist(3,1:25),'k-o')
 end
 if nmod>=4
-plot(dt*(0:24),muHist(4,1:25),'k-0')
+plot(dt*(0:24),muHist(4,1:25),'k-+')
+end
+if nmod>=5
+plot(dt*(0:24),muHist(4,1:25),'k-s')
 end
 figset
 xlabel('Time Elapsed (s)')
 ylabel('Model Probability')
+legend('VM/GT','GT','GT/PM','VM','other')
+figset
 %legend('Nash strategy','Non-Nash strategy') %update per side
 
 

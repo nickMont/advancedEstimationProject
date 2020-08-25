@@ -11,6 +11,24 @@ rng(rngseedno);
 %  compatible
 
 
+% PEH runs:
+% standard controller (disc at 15step):
+% runtime: 
+% Jp: 
+% Je: 
+
+% VMGT:
+% runtime: 
+% Jp: 
+% Je: 
+
+% VM (pure)
+% runtime: 
+% Jp: 
+% Je: 
+
+%.
+
 % standard controller:
 % runtime: 5.0165e+03
 % Jp: 1.0120e+04
@@ -46,8 +64,8 @@ vmtune=0.8; %deceleration parameter for VM
 
 % Control type flags, if GT specified
 % select from: vmquad, gt_overx
-Spur.controlType='vmquad';
-Seva.controlType='vmquad';
+Spur.controlType='gt_overx';
+Seva.controlType='gt_overx';
 % gameState_p.controlType='gt_overx';
 
 % load nnTrainSets\nnQuadDyn\network.mat
@@ -61,7 +79,7 @@ t0=0;
 tmax=10;
 
 %utemp=permn(-2:0.2:2,2)';
-uvec=-1:.2:1;
+uvec=-1:2/14:1;
 utemp=permn(uvec,2)';
 upmax=umax;
 umax=upmax;
@@ -77,7 +95,7 @@ xEva=[ewxvPur;ewxvEva];
 xTrue=xPur;
 
 Qpur=zeros(12,12);
-Qpur(7:9,7:9)=diag([5,100,5]);
+Qpur(7:9,7:9)=diag([5,5,0]);
 Qeva=zeros(12,12);
 Qeva(7:9,7:9)=5*eye(3);
 Rpur=5*eye(4);
@@ -96,6 +114,7 @@ Rk=0.1*eye(length(ewxvEva));
 
 tic
 for t=t0:dt:tmax
+    t_current = t
     n=n+1;
     
     %     upurset=umin:du:umax;
@@ -178,7 +197,7 @@ for t=t0:dt:tmax
     zMeas=xTrue(13:24)+chol(Rk)*rand(12,1);
     [xhatE,PhatE]=kfMeasure(xhatEp1,Pp1,zMeas,eye(length(ewxvEva)),Rk);
     
-    xhatE-xTrue(13:24)
+%     xhatE-xTrue(13:24)
     
     noise=zeros(24,1);
     xEva=xTrue+noise;
