@@ -298,9 +298,9 @@ xE2d=xStore(19:20,indsamp);
 
 figure(1);clf;
 figset
-plot(xP2d(1,:),xP2d(2,:),'-*b');
+plot(xP2d(1,:),xP2d(2,:),'-*k');
 hold on
-plot(xE2d(1,:),xE2d(2,:),'-Or');
+plot(xE2d(1,:),xE2d(2,:),'-Ok');
 % hold on
 % plot(xPlinCompare(1,:),xPlinCompare(2,:),'-.*k');
 % hold on

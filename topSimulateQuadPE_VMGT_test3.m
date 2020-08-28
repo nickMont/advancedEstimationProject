@@ -1,4 +1,4 @@
-clear;clc;
+% clear;clc;
 beep off;
 
 rngseedno=457;
@@ -10,69 +10,68 @@ rng(rngseedno);
 %  BEFORE running this; hardcoded the other way to remain backwards
 %  compatible
 
+Jp_S=zeros(3,1);
+Je_S=zeros(3,1);
+tT_S=zeros(3,1);
 
-% PEH runs:
-% standard controller (disc at 15step):
-% runtime: 313.2693
-% Jp: 9.6668e+04
-% Je: 1.8128e+04
+for iTemp=1:3
 
-% VMGT:
-% runtime: 53.6516
-% Jp: 9.4795e+04
-% Je: 1.7753e+04
+clearvars -except Jp_S Je_S tT_S iTemp
 
-% VM (pure)
-% runtime: 
-% Jp: 
-% Je: 
+if iTemp==1
+    useGameTheoreticController=true;
+    usePureVelMatchController=false;
+    Spur.controlType='gt_overx';
+    Seva.controlType=Spur.controlType;
+%     continue
+elseif iTemp==2
+    useGameTheoreticController=true;
+    usePureVelMatchController=false;
+    Spur.controlType='vmquad';
+    Seva.controlType=Spur.controlType;
+    continue
+elseif iTemp==3
+    useGameTheoreticController=false;
+    usePureVelMatchController=true;
+    continue
+end
 
-
-% General control type flags
-useGameTheoreticController=true;
-usePureVelMatchController=false;
-scaleVec=0.8; %magnitude of desired uE control relative to uP control
-vmtune=1; %deceleration parameter for VM
-
-% Control type flags, if GT specified
-% select from: vmquad, gt_overx
-Spur.controlType='gt_overx';
-% Spur.controlType='vmquad';
-Seva.controlType=Spur.controlType;
-% gameState_p.controlType='gt_overx';
+scaleVec=1.5; %VM; magnitude of desired uE control relative to uP control
+vmtune=.2; %VM; deceleration parameter
 
 % load nnTrainSets\nnQuadDyn\network.mat
 % gameState_p.NN=net;
 gameState.tryNN=false;
 
-umax=.5;
+umax=1;
 
-dt=0.05;
+dt=1/10;
 t0=0;
-tmax=5;
+tmax=1;
 
 %utemp=permn(-2:0.2:2,2)';
 uvec=-1:2/14:1;
 utemp=permn(uvec,2)';
 upmax=umax;
-umax=upmax;
 utype.radius=upmax;
 utemp=mapUtempToUvec(utemp,"circle",utype);
 
 n=0;
 z31=zeros(3,1);
-ewxvEva=[z31; z31; 1;0;0; 0;.2;0];
+ewxvEva=[z31; z31; 1;0;0; 0;.1;0];
 ewxvPur=[zeros(12,1)];
 xPur=[ewxvPur;ewxvEva];
 xEva=[ewxvPur;ewxvEva];
 xTrue=xPur;
 
 Qpur=zeros(12,12);
-Qpur(7:9,7:9)=diag([5,5,5]);
+Qpur(7:9,7:9)=diag([5 5 0]);
+Qpur(10:12,10:12)=5*eye(3);
 Qeva=zeros(12,12);
-Qeva(7:9,7:9)=5*eye(3);
-Rpur=10*eye(4);
-Reva=10*eye(4);
+Qeva(7:9,7:9)=diag([20 20 20]);
+Qeva(10:12,10:12)=5*eye(3);
+Rpur=5*eye(4);
+Reva=5*eye(4);
 xStore=xPur;
 
 uPhist=[];
@@ -146,6 +145,9 @@ for t=t0:dt:tmax
         xp=[xTrue(7:8);xTrue(10:11)];xe=[xTrue(19:20);xTrue(22:23)];
         uP=vmRGVO_tune(xp,xe,umax,2,dt,zeros(2,1),vmtune);
         uE=-scaleVec*uP;
+        if norm(uE)>umax
+            uE=umax*uE/norm(uE);
+        end
         xd = xPur(13:24); xd(9)=0;
         uEvaTrue = quadControllerACCONLY(xd, zeros(4,1), 3, [uE;0],0);
         xd = xPur(1:12); xd(9)=0;
@@ -178,33 +180,39 @@ for t=t0:dt:tmax
     
     xStore=[xStore xTrue];
 end
-tTotal=toc
-
-fprintf('%0.4d     %0.4d     %0.4d \n',JJp,JJe,tTotal)
+tTotal=toc;
+Jp_S(iTemp)=JJp;
+Je_S(iTemp)=JJe;
+tT_S(iTemp)=tTotal;
 
 % %     load quaddat.mat;
-% indsamp=1:5:150;
-% xP2d=xStore(7:8,indsamp);
-% xE2d=xStore(19:20,indsamp);
+indsamp=1:1:size(xStore,2);
+xP2d=xStore(7:8,indsamp);
+xE2d=xStore(19:20,indsamp);
 % % mx=(xP2d(2,1)-xE2d(2,1))/(xP2d(1,1)-xE2d(1,1));
 % % xPlin_x=-5:0.3:1;
 % % xPlin_y=xPlin_x*mx;
 % % xElin_x=-6:0.3:0;
 % % xElin_y=xElin_x*mx;
-% 
-% figure(1);clf;
-% figset
-% plot(xP2d(1,:),xP2d(2,:),'-*b');
-% hold on
-% plot(xE2d(1,:),xE2d(2,:),'-Or');
-% % hold on
-% % plot(xPlinCompare(1,:),xPlinCompare(2,:),'-.*k');
-% % hold on
-% % plot(xElinCompare(1,:),xElinCompare(2,:),'-.og');
-% axis([-15 2 -6 2])
-% xlabel('x-position (m)')
-% ylabel('y-position (m)')
-% legend('Pursuer, hybrid','Evader, hybrid');
-% figset
+%
+if iTemp==1
+figure(1);clf;
+figset
+plot(xP2d(1,:),xP2d(2,:),'-*k');
+hold on
+plot(xE2d(1,:),xE2d(2,:),'-Ok');
+axis([-1 2 -1 2])
+xlabel('x-position (m)')
+ylabel('y-position (m)')
+legend('Pursuer, hybrid','Evader, hybrid');
+figset
+end
+
+end
+fprintf('GT / VMGT / VM \n')
+for iT=1:3
+    fprintf('%0.4d     %0.4d     %0.4d \n',Jp_S(iT,1),Je_S(iT,1),tT_S(iT,1))
+end
+
 
 
