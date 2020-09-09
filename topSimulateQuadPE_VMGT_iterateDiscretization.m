@@ -4,13 +4,18 @@ beep off;
 rngseedno=457;
 rng(rngseedno);
 
-discSteps=5:1:25;
+N_monteCarlo=1;
+
+discSteps=5:1:10;
 nstep=length(discSteps);
 tRun_S=cell(nstep,1);
-Jp_S=cell(nstep,1);
-Je_S=cell(nstep,1);
-x_S=cell(nstep,1);
+Jp_S=cell(nstep,N_monteCarlo);
+Je_S=cell(nstep,N_monteCarlo);
+x_S=cell(nstep,N_monteCarlo);
 
+
+for i_mc=1:N_monteCarlo
+monteCarloPercent = (i_mc-1)/N_monteCarlo*100
 for iter=1:nstep
     
     currentStepsize=discSteps(iter)
@@ -27,7 +32,7 @@ for iter=1:nstep
     
     dt=0.05;
     t0=0;
-    tmax=10;
+    tmax=5;
     
     du=2/(discSteps(iter)-2);
     uvec=-1:du:1;
@@ -39,16 +44,22 @@ for iter=1:nstep
     
     n=0;
     z31=zeros(3,1);
-    ewxvPur=[z31; z31; 1;0.1;0; z31];
-    ewxvEva=[zeros(12,1)];
+%     xp0=rand0(5,2,1);vp0=rand0(0.5,2,1);
+%     xe0=rand0(5,2,1);ve0=rand0(0.5,2,1);
+    xp0=[1;0.1]; vp0=[0;0];
+    xe0=[0;0]; ve0=[0;0];
+    ewxvPur=[z31; z31; xp0;0; vp0;0];
+    ewxvEva=[z31; z31; xe0;0; ve0;0];
     xPur=[ewxvPur;ewxvEva];
     xEva=[ewxvPur;ewxvEva];
     xTrue=xPur;
     
     Qpur=zeros(12,12);
-    Qpur(7:9,7:9)=diag([5,100,5]);
     Qeva=zeros(12,12);
-    Qeva(7:9,7:9)=5*eye(3);
+%     Qeva(7:8,7:8)=diag(10*rand(2,1));
+%     Qpur(7:8,7:8)=diag(10*rand(2,1));
+    Qeva(7:8,7:8)=5*eye(2);
+    Qpur(7:8,7:8)=5*eye(2);
     Rpur=eye(4);
     Reva=eye(4);
     xStore=xPur;
@@ -132,11 +143,11 @@ for iter=1:nstep
     end
     tTotal=toc;
     
-    tRun_S{iter,1}=tTotal;
-    Jp_S{iter,1}=JJp;
-    Je_S{iter,1}=JJe;
-    x_S{iter,1}=xStore;
+    tRun_S{iter,i_mc}=tTotal;
+    Jp_S{iter,i_mc}=JJp;
+    Je_S{iter,i_mc}=JJe;
+    x_S{iter,i_mc}=xStore;
     
 end
-
+end
 

@@ -102,6 +102,11 @@ for t=t0:dt:tmax
     Seva.Jparams.Q=Qeva;
     Seva.Jparams.Rself=Reva;
     Seva.Jparams.Ropp=zeros(4,4);
+    xp=[xTrue(7:8);xTrue(10:11)];xe=[xTrue(19:20);xTrue(22:23)];
+    uP=vmRGVO_tune(xp,xe,umax,2,dt,zeros(2,1),vmtune);
+    uE=-scaleVec*uP;
+    xdP=f_dynPur(xp,uP,dt,zeros(2,1));
+    xdE=f_dynEva(xp,uP,dt,zeros(2,1));
     
     if useGameTheoreticController
         % Guessing pursuer
@@ -121,6 +126,7 @@ for t=t0:dt:tmax
             for ik=1:length(utemp)
                 Spur.uMat{ik}=utemp(:,ik);
             end
+            Spur.uMat{ik+1}=xdP(1:2);
         end
         Spur.Jname='J_purQuad';
         Spur.fname='f_dynPurQuad';
@@ -134,6 +140,7 @@ for t=t0:dt:tmax
             for ik=1:length(utemp)
                 Seva.uMat{ik}=utemp(:,ik);
             end
+            Seva.uMat{ik+1}=xdE(1:2);
         end
         Seva.Jname='J_evaQuad';
         Seva.fname='f_dynEvaQuad';

@@ -13,10 +13,12 @@ rng(rngseedno);
 Jp_S=zeros(3,1);
 Je_S=zeros(3,1);
 tT_S=zeros(3,1);
+uP_S=zeros(4,2,3);
+uE_S=zeros(4,2,3);
 
 for iTemp=1:3
 
-clearvars -except Jp_S Je_S tT_S iTemp
+clearvars -except Jp_S Je_S tT_S uP_S uE_S iTemp
 
 if iTemp==1
     useGameTheoreticController=true;
@@ -29,11 +31,11 @@ elseif iTemp==2
     usePureVelMatchController=false;
     Spur.controlType='vmquad';
     Seva.controlType=Spur.controlType;
-    continue
+%     continue
 elseif iTemp==3
     useGameTheoreticController=false;
     usePureVelMatchController=true;
-    continue
+%     continue
 end
 
 scaleVec=1.5; %VM; magnitude of desired uE control relative to uP control
@@ -53,6 +55,7 @@ tmax=1;
 uvec=-1:2/14:1;
 utemp=permn(uvec,2)';
 upmax=umax;
+uemax=upmax;
 utype.radius=upmax;
 utemp=mapUtempToUvec(utemp,"circle",utype);
 
@@ -101,6 +104,11 @@ for t=t0:dt:tmax
     Seva.Jparams.Q=Qeva;
     Seva.Jparams.Rself=Reva;
     Seva.Jparams.Ropp=zeros(4,4);
+    xp=[xTrue(7:8);xTrue(10:11)];xe=[xTrue(19:20);xTrue(22:23)];
+    uP=vmRGVO_tune(xp,xe,umax,2,dt,zeros(2,1),vmtune);
+    uE=-scaleVec*uP;
+    xdP=f_dynPur(xp,uP,dt,zeros(2,1));
+    xdE=f_dynEva(xp,uP,dt,zeros(2,1));
     
     if useGameTheoreticController
         % Guessing pursuer
@@ -118,8 +126,9 @@ for t=t0:dt:tmax
         end
         if strcmp(Spur.controlType,'gt_overx')
             for ik=1:length(utemp)
-                Spur.uMat{ik}=utemp(:,ik);
+                Spur.uMat{ik}=utemp(:,ik)*dt*upmax;
             end
+            Spur.uMat{ik+1}=xdP(1:2);
         end
         Spur.Jname='J_purQuad';
         Spur.fname='f_dynPurQuad';
@@ -131,8 +140,9 @@ for t=t0:dt:tmax
         end
         if strcmp(Seva.controlType,'gt_overx')
             for ik=1:length(utemp)
-                Seva.uMat{ik}=utemp(:,ik);
+                Seva.uMat{ik}=utemp(:,ik)*dt*uemax;
             end
+            Seva.uMat{ik+1}=xdE(1:2);
         end
         Seva.Jname='J_evaQuad';
         Seva.fname='f_dynEvaQuad';
@@ -178,6 +188,9 @@ for t=t0:dt:tmax
     xEva=xTrue+noise;
     xPur=xTrue+noise;
     
+    uP_S(:,n,iTemp)=uPurTrue;
+    uE_S(:,n,iTemp)=uEvaTrue;
+    
     xStore=[xStore xTrue];
 end
 tTotal=toc;
@@ -209,10 +222,11 @@ figset
 end
 
 end
+
+
 fprintf('GT / VMGT / VM \n')
 for iT=1:3
     fprintf('%0.4d     %0.4d     %0.4d \n',Jp_S(iT,1),Je_S(iT,1),tT_S(iT,1))
 end
-
 
 

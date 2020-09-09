@@ -1,14 +1,28 @@
-function [uPur,uEva,outputflag,uValP,uValE,Sminimax,Smisc] = f_dyn2(Spur,Seva,gameState,vk)
+function [uPur,uEva,outputflag,uValP,uValE,Sminimax,Smisc] = f_dyn2(Spur,Seva,gameState,vk,miscParams)
 if nargin<=3
     vk=zeros(100,1);
 end
 lenv=floor(length(vk)/2);
 Sminimax=[];
 
-%Generate cost matrices
-[Cpur,Ceva,uP,uE]=generateCostMatricesVMquad(Spur,Seva,gameState);
-[nP,nE]=size(Cpur);
+%Generate cost matrices, determine whether to use robust expectation or not
+generateUsingUT=false;
+if nargin>=5
+    if isfield(miscParams,'useUT')
+        if miscParams.useUT
+            generateUsingUT=true;
+        end
+    end
+end
 
+%Robust expectation
+if generateUsingUT
+    
+elseif ~generateUsingUT
+    [Cpur,Ceva,uP,uE]=generateCostMatricesVMquad(Spur,Seva,gameState);
+    [nP,nE]=size(Cpur);
+end
+    
 [indminimax,~,~]=minimax2(Cpur,Ceva);
 Sminimax.index=indminimax;
 Sminimax.uP=uP{indminimax(1),indminimax(2)};

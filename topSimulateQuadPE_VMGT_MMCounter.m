@@ -13,6 +13,7 @@ rng(rngseedno);
 %  compatible
 
 
+
 % Natural (pure nash) costs:
 % Jp = 5.2425e+03
 % Je = 4.7274e+03
@@ -22,7 +23,8 @@ rng(rngseedno);
 % Je = 4.7274e+03
 
 % Use best response by taking mean of rotor speeds
-flagUseMeanBestResponse=false;
+flagUseMeanBestResponse=true;
+meanBestResponseType='mean_output'; %mean_omega, mean_output
 
 % General control type flags
 useGameTheoreticController=true;
@@ -222,14 +224,25 @@ for t=t0:dt:tmax
         uPurBestResponseStack{ij,1}=u2;
     end
     
+    xEndStateMean=zeros(size(xTrue(1:12)));
     if flagUseMeanBestResponse
-        uPurTrue=zeros(4,1);
-        for ij=1:nmod
-            uPurTrue=uPurTrue+mu(ij)*uPurBestResponseStack{ij,1};
+        if strcmp(meanBestResponseType,'mean_rotor')
+            uPurTrue=zeros(4,1);
+            for ij=1:nmod
+                uPurTrue=uPurTrue+mu(ij)*uPurBestResponseStack{ij,1};
+            end
+        elseif strcmp(meanBestResponseType,'mean_output')
+            for ij=1:nmod
+                %NOTE: This adds attitude incorrectly but only position
+                % states matter to the controller
+                xEndStateMean=1/mu(ij)*f_dynPurQuad(xTrue(1:12),uPurBestResponseStack{ij,1},dt,zeros(2,1));
+            end
         end
     end
+    if flagUseMeanBestResponse && strcmp(meanBestResponseType,'mean_output')
+        uPurTrue=quadController(xTrue(1:12),zeros(4,1),zeros(3,1),xEndStateMean,1,zeros(12,1));
+    end
     
-%     uEvaTrue=uEvaTrue+[.2;.2;-.2;-.2];
     
     uPhist=[uPhist uPurTrue];
     uEhist=[uEhist uEvaTrue];

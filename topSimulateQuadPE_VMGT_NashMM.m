@@ -10,34 +10,6 @@ rng(rngseedno);
 %  BEFORE running this; hardcoded the other way to remain backwards
 %  compatible
 
-
-% standard controller:
-% runtime: 5.0165e+03
-% Jp: 1.0120e+04
-% Je: 9.6958e+03
-
-% VMGT:
-% runtime: 476.6351
-% Jp: 1.0408e+04
-% Je: 9.3878e+03
-
-% VMGT w/NN
-% runtime: 1.7013e+03
-% Jp: 1.0318e+04
-% Je: 9.4986e+03
-
-% VMGT BADDIAG
-% JJp =
-%    1.0016e+04
-% JJe =
-%    9.0306e+03
-
-% standard BADDIAG
-% JJp =
-%    1.4131e+04
-% JJe =
-%    5.9543e+03
-
 % General control type flags
 useGameTheoreticController=true;
 usePureVelMatchController=false;
