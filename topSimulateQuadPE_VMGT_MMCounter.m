@@ -12,19 +12,11 @@ rng(rngseedno);
 %  BEFORE running this; hardcoded the other way to remain backwards
 %  compatible
 
-
-
-% Natural (pure nash) costs:
-% Jp = 5.2425e+03
-% Je = 4.7274e+03
-
-% Best response costs:
-% Jp = 5.2425e+03
-% Je = 4.7274e+03
-
 % Use best response by taking mean of rotor speeds
-flagUseMeanBestResponse=true;
+flagUseMeanBestResponse=false;
 meanBestResponseType='mean_output'; %mean_omega, mean_output
+% output: 8.8181e+03
+% omega:  8.8181e+03
 
 % General control type flags
 useGameTheoreticController=true;
@@ -78,9 +70,9 @@ xEva=[ewxvPur;ewxvEva];
 xTrue=xPur;
 
 Qpur=zeros(12,12);
-Qpur(7:9,7:9)=diag([5,5,0]);
+Qpur(7:9,7:9)=15*diag([5,5,0]);
 Qeva=zeros(12,12);
-Qeva(7:8,7:8)=5*eye(2);
+Qeva(7:8,7:8)=15*eye(2);
 Rpur=eye(4);
 Reva=eye(4);
 xStore=xPur;
@@ -101,10 +93,6 @@ tic
 for t=t0:dt:tmax
     n=n+1;
     
-    %     upurset=umin:du:umax;
-    %     %uPur=combvec(upurset,upurset,upurset,upurset);
-    %     uPur=combvec(upurset,upurset,upurset);
-    %     uEva=uPur;
     Spur.Jname='J_purQuad';
     Seva.Jname='J_evaQuad';
     Spur.Jparams.Q=Qpur;
@@ -117,6 +105,11 @@ for t=t0:dt:tmax
     Seva.uLmax=uLmax;
     
     if useGameTheoreticController
+        
+        % Robust estimation params
+        miscParams.Qk=0.001*eye(24);
+        miscParams.useUT=false;
+        
         % Guessing pursuer
         gameState.xPur=xPur(1:12);
         gameState.xEva=xPur(13:24);
@@ -152,7 +145,7 @@ for t=t0:dt:tmax
         Seva.fname='f_dynEvaQuad';
         Seva.UseVelMatch=true;
         % Propagate to next time step
-        [up,ue,flag,uPSampled,uESampled,Sminimax,Smisc]=f_dyn2(Spur,Seva,gameState,zeros(4,1));
+        [up,ue,flag,uPSampled,uESampled,Sminimax,Smisc]=f_dyn2(Spur,Seva,gameState,zeros(4,1),miscParams);
         uPurTrue=uPSampled;
         uEvaTrue=uESampled;
         uEvaNash=uESampled;

@@ -17,7 +17,47 @@ end
 
 %Robust expectation
 if generateUsingUT
-    
+    SpurTemp=Spur;
+    SevaTemp=Seva;
+    gameStateTemp=gameState;
+    xk = [gameState.xPur;gameState.xEva];
+    nx = length(xk);
+    nv=0; %process noise ignored for now
+    Sk_aug = chol(miscParams.Qk)';
+    alpha = 1e-3;
+    beta = 2;
+    kappa = 0;
+    lambda_p = alpha^2*(kappa + nx + nv) - nx - nv;
+    c_p = sqrt(nx+nv+lambda_p);
+    w_mean_center = lambda_p/(nx + nv + lambda_p);
+    w_mean_reg = 1/(2*(nx + nv + lambda_p));
+    [Cp0,Ce0,uP0,uE0] = generateCostMatricesVMquad(SpurTemp,SevaTemp,gameStateTemp);
+    CpSum = Cp0*w_mean_center;
+    CeSum = Ce0*w_mean_center;
+%     uPsum = uP0*w_mean_center; %note: need to convert cell2mat
+%     uEsum = uE0*w_mean_center;
+    sgn = 1;
+    for ij=1:2*nx
+        colno = mod(ij,nx)+1;
+        if(ij > (nx))
+            sgn = -1;
+        end
+        xaug_ij = xk + sgn*c_p*Sk_aug(:,colno);
+        gameStateTemp.xPur=xaug_ij(1:nx/2);
+        gameStateTemp.xEva=xaug_ij(nx/2+1:nx);
+        [Cp1,Ce1,uP1,uE1] = generateCostMatricesVMquad(SpurTemp,SevaTemp,gameStateTemp);
+        CpSum = CpSum + Cp1*w_mean_reg;
+        CeSum = CeSum + Ce1*w_mean_reg;
+%         uPsum = uPsum + uP1*w_mean_reg;
+%         uEsum = uEsum + uE1*w_mean_reg;
+    end
+    Cpur=CpSum;
+    Ceva=CeSum;
+%     uP=uPsum;
+%     uE=uEsum;
+    uP=uP0;
+    uE=uE0;
+    [nP,nE]=size(Cpur);
 elseif ~generateUsingUT
     [Cpur,Ceva,uP,uE]=generateCostMatricesVMquad(Spur,Seva,gameState);
     [nP,nE]=size(Cpur);
