@@ -1,1 +1,1 @@
-addpath('code/quadsim','code/topscripts','code/helperfuns')
+addpath('quadsim','topscripts','helperfuns')
