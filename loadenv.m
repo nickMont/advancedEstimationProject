@@ -1,1 +1,1 @@
-addpath('quadsim','topscripts','helperfuns')
+addpath('src/quadsim','src/fdyn_and_j')

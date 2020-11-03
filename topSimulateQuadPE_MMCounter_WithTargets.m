@@ -1,4 +1,4 @@
-clear;clc;
+clear;clc;loadenv;
 beep off;
 
 %note use addpath('name') to add folders to path
@@ -15,12 +15,45 @@ rng(rngseedno);
 % Use best response by taking mean of rotor speeds
 flagUseMeanBestResponse=false;
 meanBestResponseType='mean_output'; %mean_omega, mean_output
+% General control type flags
+FLAG_useGameTheoreticController=true;
+FLAG_usePureVelMatchController=false;
+FLAG_tryMotionPredictionInVM2=false; %try heuristic for modifying motion direction prediction
+numRefinements=0; %number of refinements for VM heading
 % output: 8.8181e+03
 % omega:  8.8181e+03
 
-% General control type flags
-useGameTheoreticController=true;
-usePureVelMatchController=false;
+% TEST: no heuristic, Q=diag(5)
+% JJp =
+%    8.8522e+03
+% JJe =
+%    4.6839e+04
+% tTotal =
+%   119.7137
+% TEST: with heuristic, Q=diag(5)
+% JJp =
+%    8.9029e+03
+% JJe =
+%    4.5657e+04
+% tTotal =
+%   121.0195
+
+% TEST: no heuristic, Q=diag(10)
+% JJp =
+%    8.8522e+03
+% JJe =
+%    8.9503e+04
+% tTotal =
+%   122.6334
+% TEST: with heuristic, Q=diag(10)
+% JJp =
+%    8.8682e+03
+% JJe =
+%    8.7177e+04
+% tTotal =
+%   120.3313
+  
+  
 scaleVec=0.8; %magnitude of desired uE control relative to uP control
 vmtune=0.8; %deceleration parameter for VM
 
@@ -69,10 +102,9 @@ xPur=[ewxvPur;ewxvEva];
 xEva=[ewxvPur;ewxvEva];
 xTrue=xPur;
 
-targetLocation=[10;10;0];
-QtargetP=[100;100;0];
-QtargetE=[5;5;0];
-
+targetLocation=[-10;-10;0];
+QtargetP=diag([0;0;0]);
+QtargetE=diag([10;10;0]);
 Qpur=zeros(12,12);
 Qpur(7:9,7:9)=15*diag([5,5,0]);
 Qeva=zeros(12,12);
@@ -108,56 +140,67 @@ for t=t0:dt:tmax
     Seva.Jparams.Ropp=zeros(4,4);
     Seva.uLmax=uLmax;
     
-    if useGameTheoreticController
-        
-        % Robust estimation params
-        miscParams.Qk=0.001*eye(24);
-        miscParams.useUT=false;
-        
-        % Guessing pursuer
-        gameState.xPur=xPur(1:12);
-        gameState.xEva=xPur(13:24);
-        gameState.dt=dt;
-        gameState.kMax=1;
-        gameState.nu=2;
-        gameState.discType='overX';
-        gameState.uMaxP=umax;
-        if strcmp(Spur.controlType,'vmquad')
-            for ik=1:length(uvec)
-                Spur.uMat{ik}=upmax*uvec(ik);
+    uEvaEst=zeros(2,1);
+    
+    if FLAG_useGameTheoreticController
+        for iR=1:numRefinements+1
+            % Robust estimation params
+            miscParams.Qk=0.001*eye(24);
+            miscParams.useUT=false;
+            
+            % Guessing pursuer
+            gameState.xPur=xPur(1:12);
+            gameState.xEva=xPur(13:24);
+            gameState.dt=dt;
+            gameState.kMax=1;
+            gameState.nu=2;
+            gameState.discType='overX';
+            gameState.uMaxP=umax;
+            gameState.uEvaEstForVM=uEvaEst;
+            if strcmp(Spur.controlType,'vmquad')
+                for ik=1:length(uvec)
+                    Spur.uMat{ik}=upmax*uvec(ik);
+                end
             end
-        end
-        if strcmp(Spur.controlType,'gt_overx')
-            for ik=1:length(utemp)
-                Spur.uMat{ik}=utemp(:,ik);
+            if strcmp(Spur.controlType,'gt_overx')
+                for ik=1:length(utemp)
+                    Spur.uMat{ik}=utemp(:,ik);
+                end
             end
-        end
-        Spur.Jname='J_purQuad';
-        Spur.fname='f_dynPurQuad';
-        Spur.UseVelMatch=true;
-        if strcmp(Seva.controlType,'vmquad')
-            for ik=1:length(uvec)
-                Seva.uMat{ik}=upmax*uvec(ik);
+            Spur.Jname='J_purQuadTarget';
+            Spur.fname='f_dynPurQuad';
+            Spur.UseVelMatch=true;
+            if strcmp(Seva.controlType,'vmquad')
+                for ik=1:length(uvec)
+                    Seva.uMat{ik}=upmax*uvec(ik);
+                end
             end
-        end
-        if strcmp(Seva.controlType,'gt_overx')
-            for ik=1:length(utemp)
-                Seva.uMat{ik}=utemp(:,ik);
+            if strcmp(Seva.controlType,'gt_overx')
+                for ik=1:length(utemp)
+                    Seva.uMat{ik}=utemp(:,ik);
+                end
             end
+            Spur.Jparams.Q_target=QtargetP;
+            Spur.Jparams.x_target=targetLocation;
+            Seva.Jname='J_evaQuadTarget';
+            Seva.fname='f_dynEvaQuad';
+            Seva.Jparams.Q_target=QtargetE;
+            Seva.Jparams.x_target=targetLocation;
+            gameState.uEvaEstForVM=uEvaEst;
+            gameState.Rtarget.Q_target=QtargetP;
+            gameState.Rtarget.x_target=targetLocation;
+            gameState.Rtarget.useMotionPrediction=FLAG_tryMotionPredictionInVM2;
+            Seva.UseVelMatch=true;
+            % Propagate to next time step
+            [up,ue,flag,uPSampled,uESampled,Sminimax,Smisc]=f_dyn2(Spur,Seva,gameState,zeros(4,1),miscParams);
+            uPurTrue=uPSampled;
+            uEvaTrue=uESampled;
+            uEvaNash=uESampled;
+            dewxv=f_dynEvaQuad(xTrue(13:24),uEvaNash,dt,zeros(2,1))-gameState.xEva;
+            dx=dewxv(7:8); dx=unit_vector(dx);
+            uEvaEst=umax*dx;
         end
-        Spur.Q_target=QtargetP;
-        Spur.x_target=targetLocation;
-        Seva.Jname='J_evaQuad';
-        Seva.fname='f_dynEvaQuad';
-        Seva.Q_target=QtargetE;
-        Seva.x_target=targetLocation;
-        Seva.UseVelMatch=true;
-        % Propagate to next time step
-        [up,ue,flag,uPSampled,uESampled,Sminimax,Smisc]=f_dyn2(Spur,Seva,gameState,zeros(4,1),miscParams);
-        uPurTrue=uPSampled;
-        uEvaTrue=uESampled;
-        uEvaNash=uESampled;
-    elseif usePureVelMatchController
+    elseif FLAG_usePureVelMatchController
         %velmatchScript
         xp=[xTrue(7:8);xTrue(10:11)];xe=[xTrue(19:20);xTrue(22:23)];
         uP=vmRGVO_tune(xp,xe,umax,2,dt,zeros(2,1),vmtune);

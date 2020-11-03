@@ -21,5 +21,6 @@ clear;clc;
 % numel(A)*numel(B)*numel(C)
 % size(out)
 
-dd=f_dynPurQuad(zeros(12,1),4.95*ones(4,1),1,zeros(2,1));
-dd(7:9)
+% dd=f_dynPurQuad(zeros(12,1),4.95*ones(4,1),1,zeros(2,1));
+% dd(7:9)
+

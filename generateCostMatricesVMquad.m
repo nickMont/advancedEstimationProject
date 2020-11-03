@@ -24,6 +24,11 @@ elseif ~Spur.UseVelMatch || ~Seva.UseVelMatch
     error('UseVelMatch set to false but generateCostMatricesVM2 was called')
 end
 
+uEvaEst=zeros(2,1);
+if isfield(gameState,'uEvaEstForVM')
+    uEvaEst=gameState.uEvaEstForVM;
+end
+
 nmodP = length(Spur.uMat);
 nmodE = length(Seva.uMat);
 
@@ -45,6 +50,19 @@ end
 % the pursuer and the evader independently, then merge the loop for k>1
 % for efficiency.
 
+if isfield(gameState,'Rtarget')
+    %load prediction params for P
+    Rt_localP=gameState.Rtarget;
+    Rt_localP.Qtarget = Seva.Jparams.Q_target(1:2,1:2); %2D
+    Rt_localP.xTarget = gameState.Rtarget.x_target(1:2); %2D
+    Rt_localP.Qpur=Spur.Jparams.Q(7:8,7:8);
+    %for E
+    Rt_localE=gameState.Rtarget;
+    Rt_localE.Qtarget = Seva.Jparams.Q_target(1:2,1:2); %2D
+    Rt_localE.xTarget = gameState.Rtarget.x_target(1:2); %2D
+    Rt_localE.Qpur = Spur.Jparams.Q(7:8,7:8); %evader uses pursuer's Q for prediction
+end
+
 for ij=1:nmodP
     stateP(:,1)=gameState.xPur;
     stateE(:,1)=gameState.xEva;
@@ -52,7 +70,14 @@ for ij=1:nmodP
     xp=stateP([7 8 10 11],1);
     xe=stateE([7 8 10 11],1);
     if strcmp(Spur.controlType,'vmquad')
-        [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+        if isfield(gameState,'Rtarget')
+            [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localP);
+%             [uhatTemp,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+%             ij
+%             uhatTemp=unit_vector(uhatTemp)
+        else
+            [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
+        end
         uhatVelMatch = unit_vector(uhatVelMatch);
         %limit vector to quadrants 1+4
         theta=atan2(uhatVelMatch(2),uhatVelMatch(1));
@@ -101,7 +126,11 @@ for iL=1:nmodE
     xe=stateE([7 8 10 11],1);
     
     if strcmp(Seva.controlType,'vmquad')
-        [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+        if isfield(gameState,'Rtarget')
+            [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
+        else
+            [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
+        end
         uhatVelMatch = unit_vector(uhatVelMatch);
         %limit vector to quadrants 1+4
         theta=atan2(uhatVelMatch(2),uhatVelMatch(1));
@@ -154,7 +183,12 @@ if gameState.kMax>1
                 xp=stateP([7 8 10 11],ik);
                 xe=stateE([7 8 10 11],ik);
                 if strcmp(Spur.controlType,'vmquad')
-                    [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+                    if isfield(gameState,'Rtarget')
+                        [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
+                    else
+                        
+                        [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
+                    end
                     uhatVelMatch = unit_vector(uhatVelMatch);
                     %limit vector to quadrants 1+4
                     theta=atan2(uhatVelMatch(2),uhatVelMatch(1));
@@ -177,7 +211,11 @@ if gameState.kMax>1
                 end
                 
                 if strcmp(Seva.controlType,'vmquad')
-                    [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+                    if isfield(gameState,'Rtarget')
+                        [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
+                    else
+                        [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
+                    end
                     uhatVelMatch = unit_vector(uhatVelMatch);
                     %limit vector to quadrants 1+4
                     theta=atan2(uhatVelMatch(2),uhatVelMatch(1));
