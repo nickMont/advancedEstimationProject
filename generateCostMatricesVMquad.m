@@ -72,9 +72,9 @@ for ij=1:nmodP
     if strcmp(Spur.controlType,'vmquad')
         if isfield(gameState,'Rtarget')
             [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localP);
-%             [uhatTemp,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
-%             ij
-%             uhatTemp=unit_vector(uhatTemp)
+            uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
+            dxt = Rt_localE.xTarget-xe(1:2);
+            uhatVelMatch=uhatVelMatch*(dxe'*Seva.Jparams.Q(7:8,7:8)*dxe)+unit_vector(dxt)*(dxt'*Rt_localE.Qpur*dxt);
         else
             [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
         end
@@ -128,6 +128,9 @@ for iL=1:nmodE
     if strcmp(Seva.controlType,'vmquad')
         if isfield(gameState,'Rtarget')
             [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
+            uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
+            dxt = Rt_localE.xTarget-xe(1:2);
+            uhatVelMatch=uhatVelMatch*(dxe'*Seva.Jparams.Q(7:8,7:8)*dxe)+unit_vector(dxt)*(dxt'*Rt_localE.Qpur*dxt);
         else
             [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
         end

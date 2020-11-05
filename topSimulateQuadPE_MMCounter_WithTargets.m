@@ -23,37 +23,28 @@ numRefinements=0; %number of refinements for VM heading
 % output: 8.8181e+03
 % omega:  8.8181e+03
 
-% TEST: no heuristic, Q=diag(5)
-% JJp =
-%    8.8522e+03
-% JJe =
-%    4.6839e+04
-% tTotal =
-%   119.7137
-% TEST: with heuristic, Q=diag(5)
-% JJp =
-%    8.9029e+03
-% JJe =
-%    4.5657e+04
-% tTotal =
-%   121.0195
-
-% TEST: no heuristic, Q=diag(10)
-% JJp =
-%    8.8522e+03
-% JJe =
-%    8.9503e+04
-% tTotal =
-%   122.6334
-% TEST: with heuristic, Q=diag(10)
+% Addition motion prediction to heading generation in VM:
 % JJp =
 %    8.8682e+03
 % JJe =
 %    8.7177e+04
 % tTotal =
 %   120.3313
-  
-  
+% Mixing post-generation:
+% JJp =
+%    8.8546e+03
+% JJe =
+%    8.7097e+04
+% tTotal =
+%   123.8809
+% Doing both:
+% JJp =
+%    8.8490e+03
+% JJe =
+%    8.7176e+04
+% tTotal =
+%   122.1941
+
 scaleVec=0.8; %magnitude of desired uE control relative to uP control
 vmtune=0.8; %deceleration parameter for VM
 
