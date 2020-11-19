@@ -18,12 +18,20 @@ meanBestResponseType='mean_output'; %mean_omega, mean_output
 % General control type flags
 FLAG_useGameTheoreticController=true;
 FLAG_usePureVelMatchController=false;
-FLAG_tryMotionPredictionInVM2=false; %try heuristic for modifying motion direction prediction
+FLAG_tryMotionPredictionInVM2=true; %try heuristic for modifying motion direction prediction
+FLAG_tryVMGTbutBypassHeuristics=true;
 numRefinements=0; %number of refinements for VM heading
 % output: 8.8181e+03
 % omega:  8.8181e+03
 
-% Addition motion prediction to heading generation in VM:
+% Stock test
+% JJp =
+%    8.8522e+03
+% JJe =
+%    8.9503e+04
+% tTotal =
+%   123.6720
+% Addition of motion prediction to heading generation in VM:
 % JJp =
 %    8.8682e+03
 % JJe =
@@ -45,12 +53,61 @@ numRefinements=0; %number of refinements for VM heading
 % tTotal =
 %   122.1941
 
+% V2: high target cost
+% No modification:
+% JJp =
+%    5.2146e+03
+% JJe =
+%    9.0230e+04
+% tTotal =
+%   122.6601
+% Mixing post-generation AND motion prediction in VM2
+% JJp =
+%    5.2446e+03
+% JJe =
+%    8.7950e+04
+% tTotal =
+%   120.3754
+
+% V3: extreme target cost
+% No modification:
+% JJp =
+%    5.2146e+03
+% JJe =
+%    8.5333e+07
+% tTotal =
+%   120.8387
+% Mixing post-generation AND motion prediction in VM2
+% JJp =
+%    5.2446e+03
+% JJe =
+%    8.3020e+07
+% tTotal =
+%   121.1098
+
+% V4: extreme target cost, pursuer uses full GT controller
+% Evader uses no heuristic
+% JJp =
+%    5.3089e+03
+% JJe =
+%    8.8085e+07
+% tTotal =
+%   400.0664
+% Evader uses a heuristic
+% JJp =
+%    5.2671e+03
+% JJe =
+%    8.3020e+07
+% tTotal =
+%   391.6956
+
+
 scaleVec=0.8; %magnitude of desired uE control relative to uP control
 vmtune=0.8; %deceleration parameter for VM
 
 % Control type flags, if GT specified
 % select from: vmquad, gt_overx
-Spur.controlType='vmquad';
+Spur.controlType='gt_overx';
 Seva.controlType='vmquad';
 % gameState_p.controlType='gt_overx';
 omega_hover=4.95;
@@ -95,11 +152,11 @@ xTrue=xPur;
 
 targetLocation=[-10;-10;0];
 QtargetP=diag([0;0;0]);
-QtargetE=diag([10;10;0]);
+QtargetE=1000*diag([10;10;0]);
 Qpur=zeros(12,12);
-Qpur(7:9,7:9)=15*diag([5,5,0]);
+Qpur(7:8,7:8)=5*eye(2);
 Qeva=zeros(12,12);
-Qeva(7:8,7:8)=15*eye(2);
+Qeva(7:8,7:8)=1*eye(2);
 Rpur=eye(4);
 Reva=eye(4);
 xStore=xPur;
@@ -181,6 +238,7 @@ for t=t0:dt:tmax
             gameState.Rtarget.Q_target=QtargetP;
             gameState.Rtarget.x_target=targetLocation;
             gameState.Rtarget.useMotionPrediction=FLAG_tryMotionPredictionInVM2;
+            gameState.Rtarget.useNoHeuristics=FLAG_tryVMGTbutBypassHeuristics;
             Seva.UseVelMatch=true;
             % Propagate to next time step
             [up,ue,flag,uPSampled,uESampled,Sminimax,Smisc]=f_dyn2(Spur,Seva,gameState,zeros(4,1),miscParams);

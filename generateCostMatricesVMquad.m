@@ -63,6 +63,7 @@ if isfield(gameState,'Rtarget')
     Rt_localE.Qpur = Spur.Jparams.Q(7:8,7:8); %evader uses pursuer's Q for prediction
 end
 
+%For pursuer, dt=1
 for ij=1:nmodP
     stateP(:,1)=gameState.xPur;
     stateE(:,1)=gameState.xEva;
@@ -71,13 +72,18 @@ for ij=1:nmodP
     xe=stateE([7 8 10 11],1);
     if strcmp(Spur.controlType,'vmquad')
         if isfield(gameState,'Rtarget')
-            [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localP);
-            uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
-            dxt = Rt_localE.xTarget-xe(1:2);
-            uhatVelMatch=uhatVelMatch*(dxe'*Seva.Jparams.Q(7:8,7:8)*dxe)+unit_vector(dxt)*(dxt'*Rt_localE.Qpur*dxt);
+            if gameState.Rtarget.useNoHeuristics
+                [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+            else
+                [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localP);
+                uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
+                dxt = Rt_localE.xTarget-xe(1:2);
+                uhatVelMatch=uhatVelMatch*(dxe'*Seva.Jparams.Q(7:8,7:8)*dxe)+unit_vector(dxt)*(dxt'*Rt_localE.Qpur*dxt);
+            end
         else
             [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
         end
+%         [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
         uhatVelMatch = unit_vector(uhatVelMatch);
         %limit vector to quadrants 1+4
         theta=atan2(uhatVelMatch(2),uhatVelMatch(1));
@@ -119,6 +125,7 @@ for ij=1:nmodP
     end
 end
 
+%For evader, dt=1
 for iL=1:nmodE
     stateE(:,1)=gameState.xEva;
     uEm=[];
@@ -127,13 +134,18 @@ for iL=1:nmodE
     
     if strcmp(Seva.controlType,'vmquad')
         if isfield(gameState,'Rtarget')
-            [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
-            uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
-            dxt = Rt_localE.xTarget-xe(1:2);
-            uhatVelMatch=uhatVelMatch*(dxe'*Seva.Jparams.Q(7:8,7:8)*dxe)+unit_vector(dxt)*(dxt'*Rt_localE.Qpur*dxt);
+            if gameState.Rtarget.useNoHeuristics
+                [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+            else
+                [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
+                uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
+                dxt = Rt_localE.xTarget-xe(1:2);
+                uhatVelMatch=uhatVelMatch*(dxe'*Seva.Jparams.Q(7:8,7:8)*dxe)+unit_vector(dxt)*(dxt'*Rt_localE.Qpur*dxt);
+            end
         else
             [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
         end
+%         [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
         uhatVelMatch = unit_vector(uhatVelMatch);
         %limit vector to quadrants 1+4
         theta=atan2(uhatVelMatch(2),uhatVelMatch(1));
@@ -175,6 +187,7 @@ for iL=1:nmodE
     end
 end
 
+%For both, dt>1
 if gameState.kMax>1
     for ij=1:nmodP
         for iL=1:nmodE
@@ -187,10 +200,14 @@ if gameState.kMax>1
                 xe=stateE([7 8 10 11],ik);
                 if strcmp(Spur.controlType,'vmquad')
                     if isfield(gameState,'Rtarget')
-                        [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
-                        uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
-                        dxt = Rt_localE.xTarget-xe(1:2);
-                        uhatVelMatch=uhatVelMatch*(dxe'*Seva.Jparams.Q(7:8,7:8)*dxe)+unit_vector(dxt)*(dxt'*Rt_localE.Qpur*dxt);
+                        if gameState.Rtarget.useNoHeuristics
+                            [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+                        else
+                            [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
+                            uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
+                            dxt = Rt_localE.xTarget-xe(1:2);
+                            uhatVelMatch=uhatVelMatch*(dxe'*Seva.Jparams.Q(7:8,7:8)*dxe)+unit_vector(dxt)*(dxt'*Rt_localE.Qpur*dxt);
+                        end
                     else
                         [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
                     end
@@ -217,10 +234,14 @@ if gameState.kMax>1
                 
                 if strcmp(Seva.controlType,'vmquad')
                     if isfield(gameState,'Rtarget')
-                        [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
-                        uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
-                        dxt = Rt_localE.xTarget-xe(1:2);
-                        uhatVelMatch=uhatVelMatch*(dxe'*Seva.Jparams.Q(7:8,7:8)*dxe)+unit_vector(dxt)*(dxt'*Rt_localE.Qpur*dxt);
+                        if gameState.Rtarget.useNoHeuristics
+                            [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+                        else
+                            [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
+                            uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
+                            dxt = Rt_localE.xTarget-xe(1:2);
+                            uhatVelMatch=uhatVelMatch*(dxe'*Seva.Jparams.Q(7:8,7:8)*dxe)+unit_vector(dxt)*(dxt'*Rt_localE.Qpur*dxt);
+                        end
                     else
                         [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
                     end
