@@ -6,8 +6,8 @@ function [Jpur,Jeva,uPcell,uEcell] = generateCostMatricesVMquad(Spur, Seva, game
 %                at time instant K
 %        Jname  %string function name for cost function
 %        fname  %string dynamics function name
-%        Jparams  %struct containing parameters for J    
-%        
+%        Jparams  %struct containing parameters for J
+%
 %
 %     structure gameState containing:
 %        xPur, xEva  %states of pursuer and evader
@@ -72,10 +72,18 @@ for ij=1:nmodP
     xe=stateE([7 8 10 11],1);
     if strcmp(Spur.controlType,'vmquad')
         if isfield(gameState,'Rtarget')
-            if gameState.Rtarget.useNoHeuristics
+            if gameState.Rtarget.useNoHeuristics && ~gameState.Rtarget.useMotionPrediction
                 [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+            elseif gameState.Rtarget.useNoHeuristics && gameState.Rtarget.useMotionPrediction
+                [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
+                uhatVelMatch=unit_vector(uhatVelMatch);
+            elseif ~gameState.Rtarget.useNoHeuristics && ~gameState.Rtarget.useMotionPrediction
+                [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+                uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
+                dxt = Rt_localE.xTarget-xe(1:2);
+                uhatVelMatch=uhatVelMatch*(dxe'*Seva.Jparams.Q(7:8,7:8)*dxe)+unit_vector(dxt)*(dxt'*Rt_localE.Qpur*dxt);
             else
-                [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localP);
+                [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
                 uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
                 dxt = Rt_localE.xTarget-xe(1:2);
                 uhatVelMatch=uhatVelMatch*(dxe'*Seva.Jparams.Q(7:8,7:8)*dxe)+unit_vector(dxt)*(dxt'*Rt_localE.Qpur*dxt);
@@ -83,7 +91,7 @@ for ij=1:nmodP
         else
             [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
         end
-%         [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
+        %         [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
         uhatVelMatch = unit_vector(uhatVelMatch);
         %limit vector to quadrants 1+4
         theta=atan2(uhatVelMatch(2),uhatVelMatch(1));
@@ -134,8 +142,16 @@ for iL=1:nmodE
     
     if strcmp(Seva.controlType,'vmquad')
         if isfield(gameState,'Rtarget')
-            if gameState.Rtarget.useNoHeuristics
+            if gameState.Rtarget.useNoHeuristics && ~gameState.Rtarget.useMotionPrediction
                 [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+            elseif gameState.Rtarget.useNoHeuristics && gameState.Rtarget.useMotionPrediction
+                [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
+                uhatVelMatch=unit_vector(uhatVelMatch);
+            elseif ~gameState.Rtarget.useNoHeuristics && ~gameState.Rtarget.useMotionPrediction
+                [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+                uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
+                dxt = Rt_localE.xTarget-xe(1:2);
+                uhatVelMatch=uhatVelMatch*(dxe'*Seva.Jparams.Q(7:8,7:8)*dxe)+unit_vector(dxt)*(dxt'*Rt_localE.Qpur*dxt);
             else
                 [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
                 uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
@@ -145,7 +161,7 @@ for iL=1:nmodE
         else
             [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
         end
-%         [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
+        %         [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1);
         uhatVelMatch = unit_vector(uhatVelMatch);
         %limit vector to quadrants 1+4
         theta=atan2(uhatVelMatch(2),uhatVelMatch(1));
@@ -200,8 +216,16 @@ if gameState.kMax>1
                 xe=stateE([7 8 10 11],ik);
                 if strcmp(Spur.controlType,'vmquad')
                     if isfield(gameState,'Rtarget')
-                        if gameState.Rtarget.useNoHeuristics
+                        if gameState.Rtarget.useNoHeuristics && ~gameState.Rtarget.useMotionPrediction
                             [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+                        elseif gameState.Rtarget.useNoHeuristics && gameState.Rtarget.useMotionPrediction
+                            [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
+                            uhatVelMatch=unit_vector(uhatVelMatch);
+                        elseif ~gameState.Rtarget.useNoHeuristics && ~gameState.Rtarget.useMotionPrediction
+                            [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+                            uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
+                            dxt = Rt_localE.xTarget-xe(1:2);
+                            uhatVelMatch=uhatVelMatch*(dxe'*Seva.Jparams.Q(7:8,7:8)*dxe)+unit_vector(dxt)*(dxt'*Rt_localE.Qpur*dxt);
                         else
                             [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
                             uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
@@ -234,8 +258,16 @@ if gameState.kMax>1
                 
                 if strcmp(Seva.controlType,'vmquad')
                     if isfield(gameState,'Rtarget')
-                        if gameState.Rtarget.useNoHeuristics
+                        if gameState.Rtarget.useNoHeuristics && ~gameState.Rtarget.useMotionPrediction
                             [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+                        elseif gameState.Rtarget.useNoHeuristics && gameState.Rtarget.useMotionPrediction
+                            [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
+                            uhatVelMatch=unit_vector(uhatVelMatch);
+                        elseif ~gameState.Rtarget.useNoHeuristics && ~gameState.Rtarget.useMotionPrediction
+                            [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,zeros(2,1),1);
+                            uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);
+                            dxt = Rt_localE.xTarget-xe(1:2);
+                            uhatVelMatch=uhatVelMatch*(dxe'*Seva.Jparams.Q(7:8,7:8)*dxe)+unit_vector(dxt)*(dxt'*Rt_localE.Qpur*dxt);
                         else
                             [uhatVelMatch,states] = vmRGVO_tune(xp,xe,gameState.uMaxP,2,gameState.dt,uEvaEst,1,Rt_localE);
                             uhatVelMatch=unit_vector(uhatVelMatch); dxe=xp-xe; dxe=dxe(1:2);

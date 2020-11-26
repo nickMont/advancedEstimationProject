@@ -18,8 +18,8 @@ meanBestResponseType='mean_output'; %mean_omega, mean_output
 % General control type flags
 FLAG_useGameTheoreticController=true;
 FLAG_usePureVelMatchController=false;
-FLAG_tryMotionPredictionInVM2=true; %try heuristic for modifying motion direction prediction
-FLAG_tryVMGTbutBypassHeuristics=true;
+FLAG_tryMotionPredictionInVM2=false; %try heuristic for modifying motion direction prediction
+FLAG_tryVMGTbutBypassHeuristics=false;
 numRefinements=0; %number of refinements for VM heading
 % output: 8.8181e+03
 % omega:  8.8181e+03
@@ -107,12 +107,12 @@ vmtune=0.8; %deceleration parameter for VM
 
 % Control type flags, if GT specified
 % select from: vmquad, gt_overx
-Spur.controlType='gt_overx';
+Spur.controlType='vmquad';
 Seva.controlType='vmquad';
 % gameState_p.controlType='gt_overx';
 omega_hover=4.95;
 
-nmod=5;
+nmod=7;
 
 % load nnTrainSets\nnQuadDyn\network.mat
 % gameState_p.NN=net;
@@ -152,7 +152,7 @@ xTrue=xPur;
 
 targetLocation=[-10;-10;0];
 QtargetP=diag([0;0;0]);
-QtargetE=1000*diag([10;10;0]);
+QtargetE=100*diag([1;1;0]);
 Qpur=zeros(12,12);
 Qpur(7:8,7:8)=5*eye(2);
 Qeva=zeros(12,12);
@@ -289,6 +289,18 @@ for t=t0:dt:tmax
             Ru=0.05*eye(4);
             uEvaTypeStack{ij,1}='vm';
         elseif ij==5
+            heurtype='both';
+            vmgt_RA_HeurScript;
+            uEvaTemp=uEvaVMGTH;
+            Ru=0.15*eye(4);
+            uEvaTypeStack{ij,1}='nash-vmgt-heur1';
+        elseif ij==6
+            heurtype='pred_only';
+            vmgt_RA_HeurScript;
+            uEvaTemp=uEvaVMGTH;
+            Ru=0.15*eye(4);
+            uEvaTypeStack{ij,1}='nash-vmgt-heur1';
+        elseif ij==7
             uEvaTemp=omega_hover*ones(4,1);
             Ru=1*eye(4);
             uEvaTypeStack{ij,1}='hover';
@@ -417,26 +429,34 @@ ylabel('y-position (m)')
 legend('Pursuer trajectory','Evader trajectory');
 figset
 
+
+%<<>> clean this up
 figset
 figure(2);clf;
 plottype=['k-x','k-*','k-0'];
-plot(dt*(0:24),muHist(1,1:25),'k-x')
+plot(dt*(0:34),muHist(1,1:35),'k-x')
 hold on
-plot(dt*(0:24),muHist(2,1:25),'k-*')
+plot(dt*(0:34),muHist(2,1:35),'k-*')
 hold on
 if nmod>=3
-plot(dt*(0:24),muHist(3,1:25),'k-o')
+plot(dt*(0:34),muHist(3,1:35),'k-o')
 end
 if nmod>=4
-plot(dt*(0:24),muHist(4,1:25),'k-+')
+plot(dt*(0:34),muHist(4,1:35),'k-+')
 end
 if nmod>=5
-plot(dt*(0:24),muHist(4,1:25),'k-s')
+plot(dt*(0:34),muHist(5,1:35),'k-s')
+end
+if nmod>=6
+plot(dt*(0:34),muHist(6,1:35),'k-^')
+end
+if nmod>=7
+plot(dt*(0:34),muHist(7,1:35),'k-v')
 end
 figset
 xlabel('Time Elapsed (s)')
 ylabel('Model Probability')
-legend('VM/GT','GT','GT/PM','VM','other')
+legend('VM/GT','GT','GT/PM','VM','VMGTHeur','other')
 figset
 %legend('Nash strategy','Non-Nash strategy') %update per side
 
