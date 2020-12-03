@@ -24,84 +24,6 @@ numRefinements=0; %number of refinements for VM heading
 % output: 8.8181e+03
 % omega:  8.8181e+03
 
-% Stock test
-% JJp =
-%    8.8522e+03
-% JJe =
-%    8.9503e+04
-% tTotal =
-%   123.6720
-% Addition of motion prediction to heading generation in VM:
-% JJp =
-%    8.8682e+03
-% JJe =
-%    8.7177e+04
-% tTotal =
-%   120.3313
-% Mixing post-generation:
-% JJp =
-%    8.8546e+03
-% JJe =
-%    8.7097e+04
-% tTotal =
-%   123.8809
-% Doing both:
-% JJp =
-%    8.8490e+03
-% JJe =
-%    8.7176e+04
-% tTotal =
-%   122.1941
-
-% V2: high target cost
-% No modification:
-% JJp =
-%    5.2146e+03
-% JJe =
-%    9.0230e+04
-% tTotal =
-%   122.6601
-% Mixing post-generation AND motion prediction in VM2
-% JJp =
-%    5.2446e+03
-% JJe =
-%    8.7950e+04
-% tTotal =
-%   120.3754
-
-% V3: extreme target cost
-% No modification:
-% JJp =
-%    5.2146e+03
-% JJe =
-%    8.5333e+07
-% tTotal =
-%   120.8387
-% Mixing post-generation AND motion prediction in VM2
-% JJp =
-%    5.2446e+03
-% JJe =
-%    8.3020e+07
-% tTotal =
-%   121.1098
-
-% V4: extreme target cost, pursuer uses full GT controller
-% Evader uses no heuristic
-% JJp =
-%    5.3089e+03
-% JJe =
-%    8.8085e+07
-% tTotal =
-%   400.0664
-% Evader uses a heuristic
-% JJp =
-%    5.2671e+03
-% JJe =
-%    8.3020e+07
-% tTotal =
-%   391.6956
-
-
 scaleVec=0.8; %magnitude of desired uE control relative to uP control
 vmtune=0.8; %deceleration parameter for VM
 
@@ -150,7 +72,10 @@ xPur=[ewxvPur;ewxvEva];
 xEva=[ewxvPur;ewxvEva];
 xTrue=xPur;
 
-targetLocation=[-10;-10;0];
+numTargets=2;
+evaTrueTargetIndex=2;
+targetLocationVec{1}=[-10;-10;0];
+targetLocationVec{2}=[-10;-5;0];
 QtargetP=diag([0;0;0]);
 QtargetE=100*diag([1;1;0]);
 Qpur=zeros(12,12);
@@ -167,9 +92,9 @@ uEhist=[];
 JJp=0;
 JJe=0;
 
-xhatE=repmat(ewxvEva,[1 nmod]);
-PhatE=repmat(0.001*eye(length(ewxvEva)),[1 1 nmod]);
-mu=1/nmod*ones(nmod,1);
+xhatE=repmat(ewxvEva,[1 nmod*numTargets]);
+PhatE=repmat(0.001*eye(length(ewxvEva)),[1 1 nmod*numTargets]);
+mu=1/(nmod*numTargets)*ones(nmod*numTargets,1);
 muHist=mu;
 Rk=0.1*eye(length(ewxvEva));
 
@@ -190,150 +115,167 @@ for t=t0:dt:tmax
     
     uEvaEst=zeros(2,1);
     
-    if FLAG_useGameTheoreticController
-        for iR=1:numRefinements+1
-            % Robust estimation params
-            miscParams.Qk=0.001*eye(24);
-            miscParams.useUT=false;
-            
-            % Guessing pursuer
-            gameState.xPur=xPur(1:12);
-            gameState.xEva=xPur(13:24);
-            gameState.dt=dt;
-            gameState.kMax=1;
-            gameState.nu=2;
-            gameState.discType='overX';
-            gameState.uMaxP=umax;
-            gameState.uEvaEstForVM=uEvaEst;
-            if strcmp(Spur.controlType,'vmquad')
-                for ik=1:length(uvec)
-                    Spur.uMat{ik}=upmax*uvec(ik);
+    for iT=1:numTargets
+        targetLocation=targetLocationVec{iT};
+        if FLAG_useGameTheoreticController
+            for iR=1:numRefinements+1
+                % Robust estimation params
+                miscParams.Qk=0.001*eye(24);
+                miscParams.useUT=false;
+                
+                % Guessing pursuer
+                gameState.xPur=xPur(1:12);
+                gameState.xEva=xPur(13:24);
+                gameState.dt=dt;
+                gameState.kMax=1;
+                gameState.nu=2;
+                gameState.discType='overX';
+                gameState.uMaxP=umax;
+                gameState.uEvaEstForVM=uEvaEst;
+                if strcmp(Spur.controlType,'vmquad')
+                    for ik=1:length(uvec)
+                        Spur.uMat{ik}=upmax*uvec(ik);
+                    end
                 end
-            end
-            if strcmp(Spur.controlType,'gt_overx')
-                for ik=1:length(utemp)
-                    Spur.uMat{ik}=utemp(:,ik);
+                if strcmp(Spur.controlType,'gt_overx')
+                    for ik=1:length(utemp)
+                        Spur.uMat{ik}=utemp(:,ik);
+                    end
                 end
-            end
-            Spur.Jname='J_purQuadTarget';
-            Spur.fname='f_dynPurQuad';
-            Spur.UseVelMatch=true;
-            if strcmp(Seva.controlType,'vmquad')
-                for ik=1:length(uvec)
-                    Seva.uMat{ik}=upmax*uvec(ik);
+                Spur.Jname='J_purQuadTarget';
+                Spur.fname='f_dynPurQuad';
+                Spur.UseVelMatch=true;
+                if strcmp(Seva.controlType,'vmquad')
+                    for ik=1:length(uvec)
+                        Seva.uMat{ik}=upmax*uvec(ik);
+                    end
                 end
-            end
-            if strcmp(Seva.controlType,'gt_overx')
-                for ik=1:length(utemp)
-                    Seva.uMat{ik}=utemp(:,ik);
+                if strcmp(Seva.controlType,'gt_overx')
+                    for ik=1:length(utemp)
+                        Seva.uMat{ik}=utemp(:,ik);
+                    end
                 end
+                Spur.Jparams.Q_target=QtargetP;
+                Spur.Jparams.x_target=targetLocation;
+                Seva.Jname='J_evaQuadTarget';
+                Seva.fname='f_dynEvaQuad';
+                Seva.Jparams.Q_target=QtargetE;
+                Seva.Jparams.x_target=targetLocation;
+                gameState.uEvaEstForVM=uEvaEst;
+                gameState.Rtarget.Q_target=QtargetP;
+                gameState.Rtarget.x_target=targetLocation;
+                gameState.Rtarget.useMotionPrediction=FLAG_tryMotionPredictionInVM2;
+                gameState.Rtarget.useNoHeuristics=FLAG_tryVMGTbutBypassHeuristics;
+                Seva.UseVelMatch=true;
+                % Propagate to next time step
+                [up,ue,flag,uPSampled,uESampled,Sminimax,Smisc]=f_dyn2(Spur,Seva,gameState,zeros(4,1),miscParams);
+                uPurTrueStr{iT}=uPSampled;
+                uEvaTrueStr{iT}=uESampled;
+                uEvaNash=uESampled;
+                dewxv=f_dynEvaQuad(xTrue(13:24),uEvaNash,dt,zeros(2,1))-gameState.xEva;
+                dx=dewxv(7:8); dx=unit_vector(dx);
+                uEvaEst=umax*dx;
             end
-            Spur.Jparams.Q_target=QtargetP;
-            Spur.Jparams.x_target=targetLocation;
-            Seva.Jname='J_evaQuadTarget';
-            Seva.fname='f_dynEvaQuad';
-            Seva.Jparams.Q_target=QtargetE;
-            Seva.Jparams.x_target=targetLocation;
-            gameState.uEvaEstForVM=uEvaEst;
-            gameState.Rtarget.Q_target=QtargetP;
-            gameState.Rtarget.x_target=targetLocation;
-            gameState.Rtarget.useMotionPrediction=FLAG_tryMotionPredictionInVM2;
-            gameState.Rtarget.useNoHeuristics=FLAG_tryVMGTbutBypassHeuristics;
-            Seva.UseVelMatch=true;
-            % Propagate to next time step
-            [up,ue,flag,uPSampled,uESampled,Sminimax,Smisc]=f_dyn2(Spur,Seva,gameState,zeros(4,1),miscParams);
-            uPurTrue=uPSampled;
-            uEvaTrue=uESampled;
-            uEvaNash=uESampled;
-            dewxv=f_dynEvaQuad(xTrue(13:24),uEvaNash,dt,zeros(2,1))-gameState.xEva;
-            dx=dewxv(7:8); dx=unit_vector(dx);
-            uEvaEst=umax*dx;
+        elseif FLAG_usePureVelMatchController
+            %velmatchScript
+            xp=[xTrue(7:8);xTrue(10:11)];xe=[xTrue(19:20);xTrue(22:23)];
+            uP=vmRGVO_tune(xp,xe,umax,2,dt,zeros(2,1),vmtune);
+            uE=-scaleVec*uP;
+            xd = xPur(13:24); xd(9)=0;
+            uEvaTrueStr{iT} = quadControllerACCONLY(xd, zeros(4,1), 3, [uE;0],0);
+            xd = xPur(1:12); xd(9)=0;
+            uPurTrueStr{iT} = quadControllerACCONLY(xd, zeros(4,1), 3, [uP;0],0);
+        else
+            error('No controller specified')
         end
-    elseif FLAG_usePureVelMatchController
-        %velmatchScript
-        xp=[xTrue(7:8);xTrue(10:11)];xe=[xTrue(19:20);xTrue(22:23)];
-        uP=vmRGVO_tune(xp,xe,umax,2,dt,zeros(2,1),vmtune);
-        uE=-scaleVec*uP;
-        xd = xPur(13:24); xd(9)=0;
-        uEvaTrue = quadControllerACCONLY(xd, zeros(4,1), 3, [uE;0],0);
-        xd = xPur(1:12); xd(9)=0;
-        uPurTrue = quadControllerACCONLY(xd, zeros(4,1), 3, [uP;0],0);
-    else
-        error('No controller specified')
     end
     
+    
+    %Determine which target's control should be applied
+    uPurTrue=uPurTrueStr{1};
+    uEvaTrue=uEvaTrueStr{evaTrueTargetIndex};
+    
+    
+    %preloading
     uEvaTempStack=cell(nmod,1);
     RuStack=cell(nmod,1);
     uEvaTypeStack=cell(nmod,1);
     
-    for ij=1:nmod
-        uEvaTemp=[];
-        Ru=[];
-        if ij==1
-            vmgtScript;
-            uEvaTemp=uEvaVMGT;
-            Ru=0.05*du*eye(4);
-            uEvaTypeStack{ij,1}='nash-vmgt';
-        elseif ij==2
-            gtfullScript;
-            uEvaTemp=uEvaGT;
-            Ru=0.01*du*eye(4);
-            uEvaTypeStack{ij,1}='nash-full';
-        elseif ij==3
-            loadPointMassControlParams;
-            Ru=0.01*du*eye(4);
-            uEvaTypeStack{ij,1}='nash-PM';
-        elseif ij==4
-            velmatchScript;
-            uEvaTemp=uEvaVM;
-            Ru=0.05*eye(4);
-            uEvaTypeStack{ij,1}='vm';
-        elseif ij==5
-            heurtype='both';
-            vmgt_RA_HeurScript;
-            uEvaTemp=uEvaVMGTH;
-            Ru=0.15*eye(4);
-            uEvaTypeStack{ij,1}='nash-vmgt-heur1';
-        elseif ij==6
-            heurtype='pred_only';
-            vmgt_RA_HeurScript;
-            uEvaTemp=uEvaVMGTH;
-            Ru=0.15*eye(4);
-            uEvaTypeStack{ij,1}='nash-vmgt-heur1';
-        elseif ij==7
-            uEvaTemp=omega_hover*ones(4,1);
-            Ru=1*eye(4);
-            uEvaTypeStack{ij,1}='hover';
+    for iT=1:numTargets
+        targetLocation=targetLocationVec{iT};
+        for ij=1:nmod
+            uEvaTemp=[];
+            Ru=[];
+            if ij==1
+                vmgtScript;
+                uEvaTemp=uEvaVMGT;
+                Ru=0.05*du*eye(4);
+                uEvaTypeStack{(iT-1)*nmod+ij,1}='nash-vmgt';
+            elseif ij==2
+                gtfullScript;
+                uEvaTemp=uEvaGT;
+                Ru=0.01*du*eye(4);
+                uEvaTypeStack{(iT-1)*nmod+ij,1}='nash-full';
+            elseif ij==3
+                loadPointMassControlParams;
+                Ru=0.01*du*eye(4);
+                uEvaTypeStack{(iT-1)*nmod+ij,1}='nash-PM';
+            elseif ij==4
+                velmatchScript;
+                uEvaTemp=uEvaVM;
+                Ru=0.05*eye(4);
+                uEvaTypeStack{(iT-1)*nmod+ij,1}='vm';
+            elseif ij==5
+                heurtype='both';
+                vmgt_RA_HeurScript;
+                uEvaTemp=uEvaVMGTH;
+                Ru=0.15*eye(4);
+                uEvaTypeStack{(iT-1)*nmod+ij,1}='nash-vmgt-heur1';
+            elseif ij==6
+                heurtype='heur_only';
+                vmgt_RA_HeurScript;
+                uEvaTemp=uEvaVMGTH;
+                Ru=0.15*eye(4);
+                uEvaTypeStack{(iT-1)*nmod+ij,1}='nash-vmgt-heur2';
+            elseif ij==7
+                uEvaTemp=omega_hover*ones(4,1);
+                Ru=1*eye(4);
+                uEvaTypeStack{(iT-1)*nmod+ij,1}='hover';
+            end
+            uEvaTempStack{(iT-1)*nmod+ij,1}=uEvaTemp;
+            RuStack{(iT-1)*nmod+ij,1}=Ru;
         end
-        uEvaTempStack{ij,1}=uEvaTemp;
-        RuStack{ij,1}=Ru;
     end
     
-%    uEvaTrue=uEvaTemp{evaControlType(n,1)};
+    %    uEvaTrue=uEvaTemp{evaControlType(n,1)};
     
     % Generate best responses
-    uPurBestResponseStack=cell(nmod,1);
-    for ij=1:nmod
-        if strcmp(uEvaTypeStack{ij,1},'nash')
-            u2=uPurTrue;
-        elseif strcmp(uEvaTypeStack{ij,1},'minimax')
-            u2=Sminimax.uP;
-        else
-            SInput.Spur=Spur; SInput.Seva=Seva;
-            SInput.Seva.uMat={}; SInput.Seva.uMat{1}=uEvaTempStack{ij,1}; SInput.Seva.controlType='gt_overu';
-            SInput.utemp=utempFine; SInput.uvec=uvecFine; SInput.umax=umax;
-            SInput.gameState=gameState;
-            SInput.player='pur'; SInput.type='discretize';
-            u2=optimizeGivenEnemyControl(SInput);
+    uPurBestResponseStack=cell(nmod*numTargets,1);
+    for iT=1:numTargets
+        targetLocation=targetLocationVec{iT};
+        for ij=1:nmod
+            if strcmp(uEvaTypeStack{(iT-1)*nmod+ij,1},'nash')
+                u2=uPurTrue;
+            elseif strcmp(uEvaTypeStack{(iT-1)*nmod+ij,1},'minimax')
+                u2=Sminimax.uP;
+            else
+                SInput.Spur=Spur; SInput.Seva=Seva;
+                SInput.Seva.uMat={}; SInput.Seva.uMat{1}=uEvaTempStack{(iT-1)*nmod+ij,1}; SInput.Seva.controlType='gt_overu';
+                SInput.utemp=utempFine; SInput.uvec=uvecFine; SInput.umax=umax;
+                SInput.gameState=gameState;
+                gameState.Rtarget.x_target=targetLocation;
+                SInput.player='pur'; SInput.type='discretize';
+                u2=optimizeGivenEnemyControl(SInput);
+            end
+            uPurBestResponseStack{(iT-1)*nmod+ij,1}=u2;
         end
-        uPurBestResponseStack{ij,1}=u2;
     end
     
     xEndStateMean=zeros(size(xTrue(1:12)));
     if flagUseMeanBestResponse
         if strcmp(meanBestResponseType,'mean_rotor')
             uPurTrue=zeros(4,1);
-            for ij=1:nmod
+            for ij=1:nmod*numTargets
                 uPurTrue=uPurTrue+mu(ij)*uPurBestResponseStack{ij,1};
             end
         elseif strcmp(meanBestResponseType,'mean_output')
@@ -362,8 +304,8 @@ for t=t0:dt:tmax
     JJp=JJp+Jpur
     JJe=JJe+Jeva
     
-    lambdaTemp=-1*ones(nmod,1);
-    for ij=1:nmod
+    lambdaTemp=-1*ones(nmod*numTargets,1);
+    for ij=1:nmod*numTargets
         uEvaMMF=uEvaTempStack{ij};
         RuMMF=RuStack{ij};
         
@@ -385,13 +327,13 @@ for t=t0:dt:tmax
         lambdaTemp(ij)=normpEval;
     end
     muTemp=mu;
-    for ij=1:nmod
+    for ij=1:nmod*numTargets
         muTemp(ij)=lambdaTemp(ij)*mu(ij)/dot(lambdaTemp,mu);
         if muTemp(ij)<1e-8
             muTemp(ij)=1e-8;
         end
     end
-    mu=muTemp/sum(muTemp);
+    mu=muTemp/sum(muTemp)
     muHist=[muHist mu];
     
 %     xhatE(:,1)-xTrue(13:24)

@@ -3,6 +3,7 @@
 SevaTilde=Seva;
 SpurTilde=Spur;
 gameStateTilde=gameState;
+gameStateTilde.Rtarget.x_target=targetLocation;
 gameStateTilde.xPur=xPur(1:12);
 gameStateTilde.xEva=xPur(13:24);
 gameStateTilde.dt=dt;
