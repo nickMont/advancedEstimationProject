@@ -34,7 +34,14 @@ Seva.controlType='vmquad';
 % gameState_p.controlType='gt_overx';
 omega_hover=4.95;
 
-nmod=7;
+heurTypeStruc{1}='vmgt';
+heurTypeStruc{2}='gt-full';
+heurTypeStruc{3}='gt-pm';
+heurTypeStruc{4}='vm';
+heurTypeStruc{5}='vmgt-heur';
+heurTypeStruc{6}='vmgt-heur2';
+heurTypeStruc{7}='other';
+[~,nmod]=size(heurTypeStruc);
 
 % load nnTrainSets\nnQuadDyn\network.mat
 % gameState_p.NN=net;
@@ -206,38 +213,38 @@ for t=t0:dt:tmax
         for ij=1:nmod
             uEvaTemp=[];
             Ru=[];
-            if ij==1
+            if strcmp(heurTypeStruc{ij},'vmgt')
                 vmgtScript;
                 uEvaTemp=uEvaVMGT;
                 Ru=0.05*du*eye(4);
                 uEvaTypeStack{(iT-1)*nmod+ij,1}='nash-vmgt';
-            elseif ij==2
+            elseif strcmp(heurTypeStruc{ij},'gt-full')
                 gtfullScript;
                 uEvaTemp=uEvaGT;
                 Ru=0.01*du*eye(4);
                 uEvaTypeStack{(iT-1)*nmod+ij,1}='nash-full';
-            elseif ij==3
+            elseif strcmp(heurTypeStruc{ij},'gt-pm')
                 loadPointMassControlParams;
                 Ru=0.01*du*eye(4);
                 uEvaTypeStack{(iT-1)*nmod+ij,1}='nash-PM';
-            elseif ij==4
+            elseif strcmp(heurTypeStruc{ij},'vm')
                 velmatchScript;
                 uEvaTemp=uEvaVM;
                 Ru=0.05*eye(4);
                 uEvaTypeStack{(iT-1)*nmod+ij,1}='vm';
-            elseif ij==5
+            elseif strcmp(heurTypeStruc{ij},'vmgt-heur')
                 heurtype='both';
                 vmgt_RA_HeurScript;
                 uEvaTemp=uEvaVMGTH;
                 Ru=0.15*eye(4);
                 uEvaTypeStack{(iT-1)*nmod+ij,1}='nash-vmgt-heur1';
-            elseif ij==6
+            elseif strcmp(heurTypeStruc{ij},'vmgt-heur2')
                 heurtype='heur_only';
                 vmgt_RA_HeurScript;
                 uEvaTemp=uEvaVMGTH;
                 Ru=0.15*eye(4);
                 uEvaTypeStack{(iT-1)*nmod+ij,1}='nash-vmgt-heur2';
-            elseif ij==7
+            elseif strcmp(heurTypeStruc{ij},'other')
                 uEvaTemp=omega_hover*ones(4,1);
                 Ru=1*eye(4);
                 uEvaTypeStack{(iT-1)*nmod+ij,1}='hover';
@@ -333,7 +340,7 @@ for t=t0:dt:tmax
             muTemp(ij)=1e-8;
         end
     end
-    mu=muTemp/sum(muTemp)
+    mu=muTemp/sum(muTemp);
     muHist=[muHist mu];
     
 %     xhatE(:,1)-xTrue(13:24)
