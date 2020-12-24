@@ -13,7 +13,6 @@ if strcmp(Sinput.type,'fmincon')
         [Sinput.selfState feval(Sinput.Sself.fname,Sinput.selfState,u,Sinput.gameState.dt,zeros(6,1))],...
         [Sinput.oppState xOpp],u,Sinput.uOpponentActual,Sinput.Sself.Jparams);
     [uOut,Jo]=fmincon(J,Sinput.uSelfGuess,[],[],[],[],zeros(nU,1),Sinput.Sself.uLmax*ones(nU,1));
-    
 elseif strcmp(Sinput.type,'discretize')
     if strcmp(Sinput.player,'pur')
         SevaTemp=Sinput.Seva;

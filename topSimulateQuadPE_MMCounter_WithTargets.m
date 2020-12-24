@@ -12,8 +12,21 @@ rng(rngseedno);
 %  BEFORE running this; hardcoded the other way to remain backwards
 %  compatible
 
+% mean_output
+% JJp =
+%    6.4783e+03
+% JJe =
+%    4.7913e+05
+% tTotal =
+%   279.8138
+% mean_rotor
+% JJp =
+%    5.3687e+03
+% JJe =
+%    4.7941e+05
+
 % Use best response by taking mean of rotor speeds
-flagUseMeanBestResponse=false;
+flagUseMeanBestResponse=true;
 meanBestResponseType='mean_output'; %mean_omega, mean_output
 % General control type flags
 FLAG_useGameTheoreticController=true;
@@ -39,8 +52,7 @@ heurTypeStruc{2}='gt-full';
 heurTypeStruc{3}='gt-pm';
 heurTypeStruc{4}='vm';
 heurTypeStruc{5}='vmgt-heur';
-heurTypeStruc{6}='vmgt-heur2';
-heurTypeStruc{7}='other';
+heurTypeStruc{6}='other';
 [~,nmod]=size(heurTypeStruc);
 
 % load nnTrainSets\nnQuadDyn\network.mat
@@ -236,13 +248,13 @@ for t=t0:dt:tmax
                 heurtype='both';
                 vmgt_RA_HeurScript;
                 uEvaTemp=uEvaVMGTH;
-                Ru=0.15*eye(4);
+                Ru=0.10*eye(4);
                 uEvaTypeStack{(iT-1)*nmod+ij,1}='nash-vmgt-heur1';
             elseif strcmp(heurTypeStruc{ij},'vmgt-heur2')
                 heurtype='heur_only';
                 vmgt_RA_HeurScript;
                 uEvaTemp=uEvaVMGTH;
-                Ru=0.15*eye(4);
+                Ru=0.10*eye(4);
                 uEvaTypeStack{(iT-1)*nmod+ij,1}='nash-vmgt-heur2';
             elseif strcmp(heurTypeStruc{ij},'other')
                 uEvaTemp=omega_hover*ones(4,1);
@@ -286,11 +298,13 @@ for t=t0:dt:tmax
                 uPurTrue=uPurTrue+mu(ij)*uPurBestResponseStack{ij,1};
             end
         elseif strcmp(meanBestResponseType,'mean_output')
-            for ij=1:nmod
+            for ij=1:nmod*numTargets
                 %NOTE: This adds attitude incorrectly but only position
                 % states matter to the controller
-                xEndStateMean=1/mu(ij)*f_dynPurQuad(xTrue(1:12),uPurBestResponseStack{ij,1},dt,zeros(2,1));
+                xEndStateMean=mu(ij)*f_dynPurQuad(xTrue(1:12),uPurBestResponseStack{ij,1},dt,zeros(2,1));
             end
+        else
+            error('Unrecognized response type');
         end
     end
     if flagUseMeanBestResponse && strcmp(meanBestResponseType,'mean_output')

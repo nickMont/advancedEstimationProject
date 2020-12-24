@@ -27,7 +27,7 @@ Jeva=42*ones(nmodP,nmodE);
 nx = length(gameState.xPur);
 nv=nx/2;
 state = zeros(nx,gameState.kMax+1);
-xPurCell = cell(nmodP);
+xPurCell = cell(nmodP,1);
 for ij=1:nmodP
     state(:,1)=gameState.xPur;
     for ik=1:gameState.kMax
@@ -42,7 +42,7 @@ end
 
 nx = length(gameState.xEva);
 state = zeros(nx,gameState.kMax+1);
-xEvaCell = cell(nmodE);
+xEvaCell = cell(nmodE,1);
 for ij=1:nmodE
     state(:,1)=gameState.xEva;
     for ik=1:gameState.kMax
@@ -54,6 +54,10 @@ for ij=1:nmodE
     end
     xEvaCell{ij} = state;
 end
+% for ij=1:nmodE
+%     ik=ij
+%     stateOut=xEvaCell{ij}
+% end
 
 noiseCostPur=3409;
 noiseCostEva=3409;
@@ -65,7 +69,6 @@ for iP=1:nmodP
         Jeva(iP,iE)=feval(Seva.Jname,xEvaCell{iE},xPurCell{iP},Seva.uMat{iE},Spur.uMat{iP},Seva.Jparams);
     end
 end
-
 
 
 end

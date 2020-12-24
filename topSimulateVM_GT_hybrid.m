@@ -1,4 +1,4 @@
-clear;clc;
+clear;clc;loadenv;
 
 %
 % Game state convention
@@ -17,19 +17,19 @@ numRefinementsE=0;
 uEvaBestPerformanceEstimate=[0;0];
 safeDecelParamVM=0.5;
 
-rngseedno=42;
+rngseedno=45;
 rng(rngseedno)
     
 plotFlag=0;
 plotEndFlag=1;
 
-tstep=1;
+tstep=0.5;
 tmax=20;
 
 %utemp=permn(-2:0.2:2,2)';
 uvec=-1:0.1:1;
 utemp=permn(uvec,2)';
-upmax=2;
+upmax=1;
 umax=upmax;
 utype.radius=upmax;
 utemp=mapUtempToUvec(utemp,"circle",utype);
@@ -39,11 +39,14 @@ Game.uType="velstep";
 %         accel (double integrator)
 Game.dt=tstep;
 
-%Qpur = diag([100 100 0 0]); Rpur = diag([0.1 1]);
-%Qeva = diag([100 50 0 0]); Reva = diag([5 10]);
+xTrue=[[0 0 0 0.5]'; [2 10 0 0.2]'];
+%xTrue = diag([20 20 2 2 20 20 2 2])*(2*rand(8,1)-1);
+%xTrue = diag([4 4 .5 .5 4 4 .5 .5])*rand(8,1);
 
-Qpur = diag(100*rand(1,4)); Rpur = diag(100*rand(1,2));
-Qeva = diag(100*rand(1,4)); Reva = diag(100*rand(1,2));
+Qpur = diag([100 100 0 0]); Rpur = diag([1 1]);
+Qeva = diag([5 5 0 0]); Reva = diag([15 15]);
+% Qpur = diag(100*rand(1,4)); Rpur = diag(100*rand(1,2));
+% Qeva = diag(100*rand(1,4)); Reva = diag(100*rand(1,2));
 
 qrTrue=[diag(Qeva);diag(Reva)];
 cdP=.3*rand;
@@ -74,10 +77,6 @@ Peva=1e-2*eye(8);
 Ppur=Peva;
 
 %This can be shunted off to a separate function
-n=0; %n is now the iteration index (yes, misuse of var names)
-%xTrue=[[0 0 2.2 0.8]'; [4 6 0 0]'];
-xTrue = diag([20 20 2 2 20 20 2 2])*(2*rand(8,1)-1);
-%xTrue = diag([4 4 .5 .5 4 4 .5 .5])*rand(8,1);
 xPur=xTrue;
 xEva=xTrue;
 axisveck=[-20 20 -5 35];
@@ -97,6 +96,7 @@ cholRexcite=0.05;
 cholExcitePlusOne=0.05;
 cholExciteDropOrder=0.00;
 
+n=0;
 xTrueS={};
 xTrueS{1}=xTrue;
 upS=cell(floor(tmax/tstep),1);ueS=cell(floor(tmax/tstep),1);
@@ -105,7 +105,7 @@ scaleS=cell(floor(tmax/tstep),1);
 Jp0=0;
 Je0=0;
 
-for ij=1:tstep:tmax
+for ij=0:tstep:tmax
     n=n+1
     tic
     
@@ -135,14 +135,14 @@ for ij=1:tstep:tmax
         %         Spur_p.uMat{ik}=utemp(:,ik);
         %     end
         Spur_p.Jname='J_pur';
-        Spur_p.fname='f_dynCD2';
+        Spur_p.fname='f_dynPur';
         Spur_p.Jparams.Q=Qpur;
         Spur_p.Jparams.Rself=Rpur;
         Spur_p.Jparams.Ropp=zeros(2,2);
         Spur_p.params.cd=cdP;
         Seva_p.uMat = Spur_p.uMat;
         Seva_p.Jname='J_eva';
-        Seva_p.fname='f_dynCD2';
+        Seva_p.fname='f_dynEva';
         Seva_p.Jparams.Q=diag(qrTrue(1:4));
         Seva_p.Jparams.Rself=diag(qrTrue(5:6));
         Seva_p.Jparams.Ropp=zeros(2,2);
@@ -182,14 +182,14 @@ for ij=1:tstep:tmax
         %         Spur_e.uMat{ik}=utemp(:,ik);
         %     end
         Spur_e.Jname='J_pur';
-        Spur_e.fname='f_dynCD2';
+        Spur_e.fname='f_dynPur';
         Spur_e.Jparams.Q=Qpur;
         Spur_e.Jparams.Rself=Rpur;
         Spur_e.Jparams.Ropp=zeros(2,2);
         Spur_e.params.cd=cdP;
         Seva_e.uMat = Spur_e.uMat;
         Seva_e.Jname='J_eva';
-        Seva_e.fname='f_dynCD2';
+        Seva_e.fname='f_dynEva';
         Seva_e.Jparams.Q=Qeva;
         Seva_e.Jparams.Rself=Reva;
         Seva_e.Jparams.Ropp=zeros(2,2);
@@ -215,8 +215,8 @@ for ij=1:tstep:tmax
         uEvaVM=uEvaTrue;
     end
     
-    xTrue(1:4)=f_dynPur(xTrue(1:4),uPurTrue(:,1),tstep,zeros(2,1));
-    xTrue(5:8)=f_dynEva(xTrue(5:8),uEvaTrue(:,1),tstep,zeros(2,1));
+    xTrue(1:4)=f_dynCD2(xTrue(1:4),uPurTrue(:,1),tstep,zeros(2,1),Spur_p.params);
+    xTrue(5:8)=f_dynCD2(xTrue(5:8),uEvaTrue(:,1),tstep,zeros(2,1),Seva_e.params);
     
     e=xTrue(1:4)-xTrue(5:8);
     Jlocp = e'*Spur_p.Jparams.Q*e + uPurTrue'*Spur_p.Jparams.Rself*uPurTrue + ...
@@ -250,14 +250,35 @@ if plotEndFlag==1
         xP(:,ijk)=xTrueS{ijk}(1:2); xE(:,ijk)=xTrueS{ijk}(5:6);
     end
     figure(3);clf;
-    plot(-xP(1,:),-xP(2,:),'-xr');
+    figset
+    plot(xP(1,:),xP(2,:),'-xr');
     hold on
-    plot(-xE(1,:),-xE(2,:),'-ob');
+    plot(xE(1,:),xE(2,:),'-ob');
     title('Interceptor using velocity matching vs unaware evader');
     xlabel('East displacement (m)');
     ylabel('North displacement (m)');
-    legend('Pursuer','Evader');
-    axis([0 60 0 20])
+    legend('Pursuer','Evader','Location','Southeast');
+%     axis(axisveck)
+    figset
+    
+    figure(4); clf;
+    subplot(2,1,1)
+    figset
+    plot(0:tstep:tmax+tstep,xP(1,:),'-xr')
+    hold on
+    plot(0:tstep:tmax+tstep,xE(1,:),'-ob')
+    xlabel('Time (s)')
+    ylabel('East displacement (m)')
+    legend('Pursuer','Evader','Location','Southeast');
+    figset
+    subplot(2,1,2)
+    figset
+    plot(0:tstep:tmax+tstep,xP(2,:),'-xr')
+    hold on
+    plot(0:tstep:tmax+tstep,xE(2,:),'-ob')
+    xlabel('Time (s)')
+    ylabel('East displacement (m)')
+    legend('Pursuer','Evader','Location','Southeast');
     figset
     
 end
