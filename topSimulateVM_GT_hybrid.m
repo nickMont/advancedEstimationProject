@@ -10,6 +10,9 @@ clear;clc;loadenv;
 
 %NOTE: CURRENTLY SET FOR U BASED ON VELOCITY MATCHING SCALE
 
+
+%controlType='vmgt';
+controlType='vm';
 %load nnvarDynTrained0417.mat
 %network1=net;
 numRefinementsP=0;
@@ -128,12 +131,19 @@ for ij=0:tstep:tmax
         gameState_p.kMax=1;
         gameState_p.nu=2;
         uhat=unit_vector(vmRGVO_tune(xTrue(1:4),xTrue(5:8),upmax,2,tstep,uEvaVM,safeDecelParamVM));
-        for ik=1:length(uvec)
-            Spur_p.uMat{ik}=upmax*uvec(ik)*uhat;
+        if strcmp(controlType,'vmgt')
+            for ik=1:length(uvec)
+                Spur_p.uMat{ik}=upmax*uvec(ik)*uhat;
+            end
+        elseif strcmp(controlType,'gt')
+            for ik=1:length(utemp)
+                Spur_p.uMat{ik}=utemp(:,ik);
+            end
+        elseif strcmp(controlType,'vm')
+            Spur_p.uMat{1}=uhat*upmax*0.8;
+        else
+            error('Invalid control type')
         end
-        %     for ik=1:length(utemp)
-        %         Spur_p.uMat{ik}=utemp(:,ik);
-        %     end
         Spur_p.Jname='J_pur';
         Spur_p.fname='f_dynPur';
         Spur_p.Jparams.Q=Qpur;
