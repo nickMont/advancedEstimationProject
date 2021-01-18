@@ -13,7 +13,7 @@ clear;clc;loadenv;
 
 % rngseedno=2;
 % rng(rngseedno)
-numNNiter=500;
+numNNiter=1000;
 
 
 qrStore=cell(1,numNNiter);
