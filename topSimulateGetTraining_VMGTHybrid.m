@@ -13,7 +13,10 @@ clear;clc;loadenv;
 
 % rngseedno=2;
 % rng(rngseedno)
-numNNiter=1000;
+numNNiter=700;
+
+flagHasTarget=true;
+flagPursuerUsesPureVM=true;
 
 
 qrStore=cell(1,numNNiter);
@@ -21,6 +24,9 @@ xStore=cell(1,numNNiter);
 measStore=cell(1,numNNiter);
 controlTypeStore=cell(1,numNNiter);
 uStore=cell(2,numNNiter);
+if flagHasTarget==true
+    targetStore=cell(2,numNNiter);
+end
 
 for ikN=1:numNNiter
 
@@ -64,12 +70,16 @@ Game.uType="velstep";
 %         accel (double integrator)
 Game.dt=tstep;
 
-xTrue=[[0 0 0 0.5]'; [2 10 0 0.2]'];
+%xTrue=[[0 0 0 0.5]'; [2 10 0 0.2]'];
 %xTrue = diag([20 20 2 2 20 20 2 2])*(2*rand(8,1)-1);
-%xTrue = diag([4 4 .5 .5 4 4 .5 .5])*rand(8,1);
+xTrue = diag([4 4 .5 .5 4 4 .5 .5])*rand(8,1);
+
+xTarget=20*(rand(2,1)-0.5);
 
 Qpur = 100*rand*diag([1 1 0 0]); Rpur = 15*rand*diag([1 1]);
 Qeva = 100*rand*diag([1 1 0 0]); Reva = 15*rand*diag([1 1]);
+QTargetPur=100*rand*diag([1 1]);
+QTargetEva=100*rand*diag([1 1]);
 % Qpur = diag(100*rand(1,4)); Rpur = diag(100*rand(1,2));
 % Qeva = diag(100*rand(1,4)); Reva = diag(100*rand(1,2));
 
@@ -77,6 +87,9 @@ qrTrue=[diag(Qeva);diag(Reva)];
 cdP=.1;
 cdE=.1;
 qrTrueAll=[diag(Qpur); diag(Rpur); diag(Qeva); diag(Reva);cdP;cdE];
+if flagHasTarget
+    qrTrueAll=[qrTrueAll; diag(QTargetPur); diag(QTargetEva); xTarget];
+end
 qrStore{ikN}=qrTrueAll;
 
 eye2=eye(2); zer2=zeros(2,2);
@@ -159,7 +172,13 @@ for ij=0:tstep:tmax
         gameState_p.dt=tstep;
         gameState_p.kMax=1;
         gameState_p.nu=2;
-        uhat=unit_vector(vmRGVO_tune(xTrue(1:4),xTrue(5:8),upmax,2,tstep,uEvaVM,safeDecelParamVM));
+        uhat=vmRGVO_tune(xTrue(1:4),xTrue(5:8),upmax,2,tstep,uEvaVM,safeDecelParamVM);
+        if flagHasTarget
+            dxe=xTrue(1:2)-xTrue(5:6);
+            dxt=xTarget-xTrue(5:6);
+            uhat=uhat*(dxe'*Qeva(1:2,1:2)*dxe)+dxt*(dxt'*QTargetEva*dxt);
+        end
+        uhat=unit_vector(uhat);
         if strcmp(controlType,'vmgt')
             for ik=1:length(uvec)
                 Spur_p.uMat{ik}=upmax*uvec(ik)*uhat;
@@ -186,6 +205,14 @@ for ij=0:tstep:tmax
         Seva_p.Jparams.Rself=diag(qrTrue(5:6));
         Seva_p.Jparams.Ropp=zeros(2,2);
         Seva_p.params.cd=cdE;
+        if flagHasTarget
+            Spur_p.Jname='J_purTarget';
+            Spur_p.Jparams.Q_target=QTargetPur;
+            Spur_p.Jparams.x_target=xTarget;
+            Seva_p.Jname='J_evaTarget';
+            Seva_p.Jparams.Q_target=QTargetEva;
+            Seva_p.Jparams.x_target=xTarget;
+        end
         % Propagate to next time step
         [up,ue,flag,tmp1,tmp2]=f_dyn(Spur_p,Seva_p,gameState_p,zeros(4,1));
         if flag==0
@@ -202,41 +229,6 @@ for ij=0:tstep:tmax
             uEvaEst=ue;
             %scaleS{n}(1)=uvec(tmp1);
         end
-        uEvaVM=uEvaEst;
-    end
-
-    %Omniscient evader
-    uEvaVM=uEvaBestPerformanceEstimate;
-    for im=1:numRefinementsE+1
-        gameState_e.xPur=xTrue(1:4);
-        gameState_e.xEva=xTrue(5:8);
-        gameState_e.dt=tstep;
-        gameState_e.kMax=1;
-        gameState_e.nu=2;
-        uhat=unit_vector(vmRGVO_tune(xTrue(1:4),xTrue(5:8),upmax,2,tstep,uEvaVM,safeDecelParamVM));
-        for ik=1:length(uvec)
-            Spur_e.uMat{ik}=upmax*uvec(ik)*uhat;
-        end
-        %     for ik=1:length(utemp)
-        %         Spur_e.uMat{ik}=utemp(:,ik);
-        %     end
-        Spur_e.Jname='J_pur';
-        Spur_e.fname='f_dynPur';
-        Spur_e.Jparams.Q=Qpur;
-        Spur_e.Jparams.Rself=Rpur;
-        Spur_e.Jparams.Ropp=zeros(2,2);
-        Spur_e.params.cd=cdP;
-        Seva_e.uMat = Spur_e.uMat;
-        Seva_e.Jname='J_eva';
-        Seva_e.fname='f_dynEva';
-        Seva_e.Jparams.Q=Qeva;
-        Seva_e.Jparams.Rself=Reva;
-        Seva_e.Jparams.Ropp=zeros(2,2);
-        Seva_e.params.cd=cdE;
-        gameState_e = gameState_p;
-        gameState_e.xPur=xEva(1:4);
-        gameState_e.xEva=xEva(5:8);
-        [up,ue,flag,tmp1,tmp2]=f_dyn(Spur_e,Seva_e,gameState_e,zeros(4,1));
         if flag==0
             uee=randsample(1:length(Seva_e.uMat),1,true,ue);
             uEvaTrue=Seva_e.uMat{uee}(:,1);
@@ -251,14 +243,77 @@ for ij=0:tstep:tmax
             uPurEst=up;
             %scaleS{n}(2)=uvec(tmp2);
         end
-        uEvaVM=uEvaTrue;
+        uEvaVM=uEvaEst;
     end
     
+    Seva_e=Seva_p;
+    Spur_e=Spur_p;
+%     %Omniscient evader
+%     uEvaVM=uEvaBestPerformanceEstimate;
+%     for im=1:numRefinementsE+1
+%         gameState_e.xPur=xTrue(1:4);
+%         gameState_e.xEva=xTrue(5:8);
+%         gameState_e.dt=tstep;
+%         gameState_e.kMax=1;
+%         gameState_e.nu=2;
+%         uhat=unit_vector(vmRGVO_tune(xTrue(1:4),xTrue(5:8),upmax,2,tstep,uEvaVM,safeDecelParamVM));
+%         for ik=1:length(uvec)
+%             Spur_e.uMat{ik}=upmax*uvec(ik)*uhat;
+%         end
+%         %     for ik=1:length(utemp)
+%         %         Spur_e.uMat{ik}=utemp(:,ik);
+%         %     end
+%         Spur_e.Jname='J_pur';
+%         Spur_e.fname='f_dynPur';
+%         Spur_e.Jparams.Q=Qpur;
+%         Spur_e.Jparams.Rself=Rpur;
+%         Spur_e.Jparams.Ropp=zeros(2,2);
+%         Spur_e.params.cd=cdP;
+%         Seva_e.uMat = Spur_e.uMat;
+%         Seva_e.Jname='J_eva';
+%         Seva_e.fname='f_dynEva';
+%         Seva_e.Jparams.Q=Qeva;
+%         Seva_e.Jparams.Rself=Reva;
+%         Seva_e.Jparams.Ropp=zeros(2,2);
+%         Seva_e.params.cd=cdE;
+%         gameState_e = gameState_p;
+%         gameState_e.xPur=xEva(1:4);
+%         gameState_e.xEva=xEva(5:8);
+%         [up,ue,flag,tmp1,tmp2]=f_dyn(Spur_e,Seva_e,gameState_e,zeros(4,1));
+%         if flag==0
+%             uee=randsample(1:length(Seva_e.uMat),1,true,ue);
+%             uEvaTrue=Seva_e.uMat{uee}(:,1);
+%             uPurEst=zeros(gameState_p.nu,gameState_p.kMax);
+%             for ik=1:length(Spur_e.uMat)
+%                 uPurEst=uPurEst+up(ik)*Spur_e.uMat{ik}(:,1);
+%             end
+%             %scaleS{n}(2)=uvec(uee);
+%             QinflateEva=Qnoiseeva+blkdiag(1*eye2, zer2);
+%         else
+%             uEvaTrue=ue;
+%             uPurEst=up;
+%             %scaleS{n}(2)=uvec(tmp2);
+%         end
+%         uEvaVM=uEvaTrue;
+%     end
+
+    if flagPursuerUsesPureVM
+        uhat=vmRGVO_tune(xTrue(1:4),xTrue(5:8),upmax,2,tstep,uEvaVM,safeDecelParamVM);
+        if flagHasTarget
+            dxe=xTrue(1:2)-xTrue(5:6);
+            dxt=xTarget-xTrue(5:6);
+            uhat=uhat*(dxe'*Qeva(1:2,1:2)*dxe)+dxt*(dxt'*QTargetEva*dxt);
+        end
+        uhat=unit_vector(uhat);
+        uPurTrue=uhat*upmax;
+%         error('inc')
+    end
+
     xTrue(1:4)=f_dynCD2(xTrue(1:4),uPurTrue(:,1),tstep,zeros(2,1),Spur_p.params);
     xTrue(5:8)=f_dynCD2(xTrue(5:8),uEvaTrue(:,1),tstep,zeros(2,1),Seva_e.params);
-    
+
     z=xTrue+chol(QnoiseStack)'*rand(8,1);
-    
+
     e=xTrue(1:4)-xTrue(5:8);
     Jlocp = e'*Spur_p.Jparams.Q*e + uPurTrue'*Spur_p.Jparams.Rself*uPurTrue + ...
         uEvaTrue'*Spur_p.Jparams.Ropp*uEvaTrue;
@@ -338,3 +393,5 @@ end
 
 
 end
+
+flagUsedVMforPur=flagPursuerUsesPureVM
