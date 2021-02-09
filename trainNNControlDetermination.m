@@ -5,12 +5,25 @@ rng(rngseedno);
 
 %Trains for cost-varying Q,R matrices
 
-%Input file information--base string and number of input .mat files
-file_input_string='nnTrainSets/nnDetermineControlType/pointMassTarget/dat';
-nummats=8;
-full_nn_datfile='nnTrainSets/nnDetermineControlType/pointMassTarget/full.mat';
+flagSaveLabels=true;
+flagQuitWithoutTraining=false;
 
+%NOTE USE nnTrainSets/nnDetermineControlType/pointMassTargetPurVM_loaded
+%ONLY IF NECESSARY DUE TO OLD WIPEOFF BUG
+
+% %Input file information--base string and number of input .mat files
+file_input_string='nnTrainSets/nnDetermineControlType/pointMassTargetPurVM/dat';
+nummats=8;
+full_nn_datfile='nnTrainSets/nnDetermineControlType/pointMassTargetPurVM/full.mat';
+full_label_datfile='nnTrainSets/nnDetermineControlType/pointMassTargetPurVM/fullWithLabels.mat';
 last_nontraining_iteration_frac=0.98; %fraction of data to be used for training
+
+% file_input_string='nnTrainSets/temp2';
+% nummats=1;
+% full_nn_datfile='nnTrainSets/tempout2.mat';
+% full_label_datfile='nnTrainSets/tempout2.mat';
+% last_nontraining_iteration_frac=0; %fraction of data to be used for training
+
 
 %Mode: Read datX.mat files or load a full data file
 %  0=load and combine .mats
@@ -18,13 +31,16 @@ last_nontraining_iteration_frac=0.98; %fraction of data to be used for training
 %  2=assumed already loaded
 mode=1;
 
-if mode==1
+if mode==0
     file_to_load=[file_input_string,num2str(1),'.mat'];
+%     file_to_load=file_input_string;
     load(file_to_load);
     indatlength=numNNiter;
     %maximumTheoreticalLength=indatlength*nummats;
-    datset=zeros(188,1,1,2);
-    solsset=cell(6000,1);
+    datset=zeros(356,1,1,1);
+    solsset=cell(1,1);
+    uP=zeros(82,1);
+    uE=zeros(82,1);
     
     nTrain=0; %DO NOT USE n, IT IS OVERLOADED
     for il=1:nummats
@@ -33,11 +49,15 @@ if mode==1
             %currentIteration=ij
             nTrain=nTrain+1;
             x0t=xStore{ij};
-            x0t=x0t(5:8,:);
+            x0t=x0t(1:8,:);
             [at,bt]=size(x0t);
             x1t=controlTypeStore{ij};
             datset(:,1,1,nTrain)=[qrStore{1,ij};reshape(x0t,[at*bt,1])];
             solsset{nTrain,1}=num2str(x1t);
+            uBp=uStore{1,ij};
+            uBe=uStore{2,ij};
+            uP(:,nTrain)=reshape(uBp,[82 1]);
+            uE(:,nTrain)=reshape(uBe,[82 1]);
         end
         if il<nummats
             file_to_load=[file_input_string,num2str(il+1),'.mat'];
@@ -55,22 +75,31 @@ end
 %
 % datset=squeeze(datset)';
 
-totalData=length(datset);
+[~,~,~,totalData]=size(datset);
 dd=randperm(totalData);
 
 solsset=categorical(solsset(dd,:));
 datset=datset(:,:,:,dd);
+uP=uP(:,dd);
+uE=uE(:,dd);
 
 last_nontraining_iteration=ceil(last_nontraining_iteration_frac*totalData);
 data_input=datset(:,:,:,1:last_nontraining_iteration);
 data_labels=solsset(1:last_nontraining_iteration,:);
+data_uP=uP(:,1:last_nontraining_iteration); data_uE=uE(:,1:last_nontraining_iteration);
 data_validation_input=datset(:,:,:,last_nontraining_iteration+1:end);
 data_validation_labels=solsset(last_nontraining_iteration+1:end,:);
+data_validation_uP=uP(:,last_nontraining_iteration+1:end); data_validation_uE=uE(:,last_nontraining_iteration+1:end);
+
+if flagSaveLabels
+    save(full_label_datfile);
+end
 
 data_generated = true;
 
+if ~flagQuitWithoutTraining
 network = [
-    matrixInputLayer([188 1 1],'Normalization','none')
+    matrixInputLayer([356 1 1],'Normalization','none')
     
 %     fullyConnectedLayer(18)
 %     batchNormalizationLayer
@@ -156,7 +185,7 @@ net = trainNetwork(data_input,data_labels,network,options);
 %dd=zeros(nx,1,1,1);
 %dd(:,1,1,1)=10*ones(5,1)
 %predict(net,dd)
-
+end
 
 
 

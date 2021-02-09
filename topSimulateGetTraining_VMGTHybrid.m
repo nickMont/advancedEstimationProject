@@ -18,7 +18,6 @@ numNNiter=700;
 flagHasTarget=true;
 flagPursuerUsesPureVM=true;
 
-
 qrStore=cell(1,numNNiter);
 xStore=cell(1,numNNiter);
 measStore=cell(1,numNNiter);
@@ -33,6 +32,15 @@ for ikN=1:numNNiter
 currentStep=ikN/numNNiter*100    
 
 ctrTypeR=floor(rand*3);
+
+% ctrTypeR=0;
+% 'DO NOT USE THIS CODE UNTIL CTRTYPER IS RANDOM AGAIN'
+% 
+% if ikN==1
+%     ctrTypeR=1
+% elseif ikN==2
+%     ctrTypeR=2
+% end
 
 if ctrTypeR==1
     controlType='vmgt';
@@ -167,6 +175,8 @@ for ij=0:tstep:tmax
     uEvaVM=uEvaBestPerformanceEstimate;
     for im=1:numRefinementsP+1
         % Guessing pursuer
+        Spur_p.uMat={0};
+        Seva_p.uMat={0};
         gameState_p.xPur=xTrue(1:4);
         gameState_p.xEva=xTrue(5:8);
         gameState_p.dt=tstep;
@@ -248,54 +258,6 @@ for ij=0:tstep:tmax
     
     Seva_e=Seva_p;
     Spur_e=Spur_p;
-%     %Omniscient evader
-%     uEvaVM=uEvaBestPerformanceEstimate;
-%     for im=1:numRefinementsE+1
-%         gameState_e.xPur=xTrue(1:4);
-%         gameState_e.xEva=xTrue(5:8);
-%         gameState_e.dt=tstep;
-%         gameState_e.kMax=1;
-%         gameState_e.nu=2;
-%         uhat=unit_vector(vmRGVO_tune(xTrue(1:4),xTrue(5:8),upmax,2,tstep,uEvaVM,safeDecelParamVM));
-%         for ik=1:length(uvec)
-%             Spur_e.uMat{ik}=upmax*uvec(ik)*uhat;
-%         end
-%         %     for ik=1:length(utemp)
-%         %         Spur_e.uMat{ik}=utemp(:,ik);
-%         %     end
-%         Spur_e.Jname='J_pur';
-%         Spur_e.fname='f_dynPur';
-%         Spur_e.Jparams.Q=Qpur;
-%         Spur_e.Jparams.Rself=Rpur;
-%         Spur_e.Jparams.Ropp=zeros(2,2);
-%         Spur_e.params.cd=cdP;
-%         Seva_e.uMat = Spur_e.uMat;
-%         Seva_e.Jname='J_eva';
-%         Seva_e.fname='f_dynEva';
-%         Seva_e.Jparams.Q=Qeva;
-%         Seva_e.Jparams.Rself=Reva;
-%         Seva_e.Jparams.Ropp=zeros(2,2);
-%         Seva_e.params.cd=cdE;
-%         gameState_e = gameState_p;
-%         gameState_e.xPur=xEva(1:4);
-%         gameState_e.xEva=xEva(5:8);
-%         [up,ue,flag,tmp1,tmp2]=f_dyn(Spur_e,Seva_e,gameState_e,zeros(4,1));
-%         if flag==0
-%             uee=randsample(1:length(Seva_e.uMat),1,true,ue);
-%             uEvaTrue=Seva_e.uMat{uee}(:,1);
-%             uPurEst=zeros(gameState_p.nu,gameState_p.kMax);
-%             for ik=1:length(Spur_e.uMat)
-%                 uPurEst=uPurEst+up(ik)*Spur_e.uMat{ik}(:,1);
-%             end
-%             %scaleS{n}(2)=uvec(uee);
-%             QinflateEva=Qnoiseeva+blkdiag(1*eye2, zer2);
-%         else
-%             uEvaTrue=ue;
-%             uPurEst=up;
-%             %scaleS{n}(2)=uvec(tmp2);
-%         end
-%         uEvaVM=uEvaTrue;
-%     end
 
     if flagPursuerUsesPureVM
         uhat=vmRGVO_tune(xTrue(1:4),xTrue(5:8),upmax,2,tstep,uEvaVM,safeDecelParamVM);
