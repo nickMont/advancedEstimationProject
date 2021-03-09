@@ -128,6 +128,7 @@ for ij=1:tstep:tmax
     gameState_p.dt=tstep;
     gameState_p.kMax=1;
     gameState_p.nu=2;
+    Spur_p.uMat={0}; Seva_p.uMat={0};
     for ik=1:length(utemp)
         Spur_p.uMat{ik}=utemp(:,ik);
     end
@@ -219,6 +220,7 @@ for ij=1:tstep:tmax
     gameState_e.dt=tstep;
     gameState_e.kMax=1;
     gameState_e.nu=2;
+    Spur_e.uMat={0}; Seva_e.uMat={0};
     for ik=1:length(utemp)
         Spur_e.uMat{ik}=utemp(:,ik);
     end

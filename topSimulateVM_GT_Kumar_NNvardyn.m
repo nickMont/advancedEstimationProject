@@ -253,6 +253,7 @@ for ij=1:tstep:tmax
     gameState_p.kMax=1;
     gameState_p.nu=2;
     uvelmatch=vmRGVO_tune(xPur(1:4),xPur(5:8),upmax,2,tstep,uEvaBestPerformanceEstimate,safeDecelParamVM);
+    Spur_p.uMat={0}; Seva_p.uMat={0};
     for ik=1:length(utemp)
         Spur_p.uMat{ik}=utemp(:,ik);
     end
@@ -334,6 +335,7 @@ for ij=1:tstep:tmax
         gameState_e.dt=tstep;
         gameState_e.kMax=1;
         gameState_e.nu=2;
+        Spur_e.uMat={0}; Seva_e.uMat={0};
         for ik=1:length(utemp)
             Spur_e.uMat{ik}=utemp(:,ik);
         end

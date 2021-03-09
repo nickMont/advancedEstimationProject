@@ -73,6 +73,7 @@ for iter=1:nmax
     gameState_p.nu=2;
     gameState_p.discType='overX';
     gameState_p.uMaxP=umax;
+    Spur_p.uMat={0}; Seva_p.uMat={0};
     if strcmp(Spur_p.controlType,'vmquad')
         for ik=1:length(uvec)
             Spur_p.uMat{ik}=upmax*uvec(ik);

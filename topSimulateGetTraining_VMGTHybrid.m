@@ -13,7 +13,10 @@ clear;clc;loadenv;
 
 % rngseedno=2;
 % rng(rngseedno)
-numNNiter=700;
+numNNiter=400;
+
+fdyn_trueNameP='f_dynCD2_simple';
+fdyn_trueNameE='f_dynCD2_simple';
 
 flagHasTarget=true;
 flagPursuerUsesPureVM=true;
@@ -50,7 +53,6 @@ else
     controlType='gt';
 end
 controlTypeStore{ikN}=ctrTypeR;
-
 
 %load nnvarDynTrained0417.mat
 %network1=net;
@@ -203,14 +205,14 @@ for ij=0:tstep:tmax
             error('Invalid control type')
         end
         Spur_p.Jname='J_pur';
-        Spur_p.fname='f_dynPur';
+        Spur_p.fname=fdyn_trueNameP;
         Spur_p.Jparams.Q=Qpur;
         Spur_p.Jparams.Rself=Rpur;
         Spur_p.Jparams.Ropp=zeros(2,2);
         Spur_p.params.cd=cdP;
         Seva_p.uMat = Spur_p.uMat;
         Seva_p.Jname='J_eva';
-        Seva_p.fname='f_dynEva';
+        Seva_p.fname=fdyn_trueNameE;
         Seva_p.Jparams.Q=diag(qrTrue(1:4));
         Seva_p.Jparams.Rself=diag(qrTrue(5:6));
         Seva_p.Jparams.Ropp=zeros(2,2);
@@ -271,8 +273,8 @@ for ij=0:tstep:tmax
 %         error('inc')
     end
 
-    xTrue(1:4)=f_dynCD2(xTrue(1:4),uPurTrue(:,1),tstep,zeros(2,1),Spur_p.params);
-    xTrue(5:8)=f_dynCD2(xTrue(5:8),uEvaTrue(:,1),tstep,zeros(2,1),Seva_e.params);
+    xTrue(1:4)=feval(fdyn_trueNameP,xTrue(1:4),uPurTrue(:,1),tstep,zeros(2,1),Spur_p.params);
+    xTrue(5:8)=feval(fdyn_trueNameE,xTrue(5:8),uEvaTrue(:,1),tstep,zeros(2,1),Seva_e.params);
 
     z=xTrue+chol(QnoiseStack)'*rand(8,1);
 

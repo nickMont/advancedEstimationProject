@@ -50,6 +50,8 @@ end
 % the pursuer and the evader independently, then merge the loop for k>1
 % for efficiency.
 
+Seva.Jparams
+
 if isfield(gameState,'Rtarget')
     %load prediction params for P
     Rt_localP=gameState.Rtarget;

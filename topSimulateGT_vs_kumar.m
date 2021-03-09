@@ -1,4 +1,4 @@
-clear;clc;
+clear;clc;loadenv;
 % Main function for 2D game AI for pop-the-balloon
 
 %
@@ -20,13 +20,14 @@ npart=500;
 
 %Evader control type info
 evaderIsOblivious=false; %if true, evader uses preset control
-evaderUsesGT=false;
-evaderUsesKumar=true;
+evaderUsesGT=true;
+evaderUsesKumar=false;
 
 %Pursuer control type info
 pursuerUsesVelmatch=false;
-pursuerUsesGT=false;
+pursuerUsesGT=true;
 pursuerUsesKumar=true;
+useNNforGT=false;
 
 %Will velmatching use a control estimate?
 %uEvaBestPerformanceEstimate=[0.9;0]; %lower can produce oscillations
@@ -37,11 +38,13 @@ tmax=20;
 
 %utemp=permn(-2:.5:2,2)';
 %utemp=permn(-2:0.5:2,2)';
-utemp=permn(-1:0.1:1,2)';
+utemp=permn(-1:0.5:1,2)';
 upmax=2;
 umax=upmax;
 utype.radius=upmax;
 utemp=mapUtempToUvec(utemp,"circle",utype);
+max_steps_to_predict=1;
+utemp_perm = permuteOverTime(utemp,max_steps_to_predict);
 
 %Evader initial travel direction if unaware
 traveldirEva=[1;0]; traveldirEva=traveldirEva/norm(traveldirEva);
@@ -69,9 +72,9 @@ H14=[Hpur zeros(4,6)];
 
 dt=tstep;
 n=2; %n is dim(x)/2 so I can copy/paste dynamic functions
-Abk1=[eye(n) dt*eye(n); zeros(n,n) 0.3*eye(n)]; %Apur
-Abk2=[eye(n) dt*eye(n); zeros(n,n) 0.3*eye(n)]; %Aeva
-Aeva=blkdiag(Abk1,Abk2);
+% Abk1=[eye(n) dt*eye(n); zeros(n,n) 0.3*eye(n)]; %Apur
+% Abk2=Abk1;
+% Aeva=blkdiag(Abk1,Abk2);
 Gnoiseeva=blkdiag([eye(n)*dt^2/2;eye(n)*dt],[eye(n)*dt^2/2;eye(n)*dt]);
 Qnoiseeva=0.002*eye(4);
 Qnoisepur=Qnoiseeva;
@@ -80,11 +83,31 @@ cholQ2p=chol(Qnoisepur(1:2,1:2))'; cholQ2e=chol(Qnoisepur(3:4,3:4))';
 Bnoiseeva=Gnoiseeva;
 Peva=1e-2*eye(8);
 
-Gcontinuous=[0 0
-   0 0
-   1 0
-   0 1];
-[Fcontinuous,Aapprx]=calculateFforKumar(Abk2,tstep,[1 0 1 0; 0 1 0 1; .01 0 -.21 0; 0 .01 0 -.21]); %NOTE:these are subtracted
+usesKumar=false;
+if evaderUsesKumar||pursuerUsesKumar
+    usesKumar=true;
+end
+if usesKumar
+Gcontinuous1=[0 0
+              1 0
+              0 0
+              0 1];
+Gcontinuous2=[0 0
+              1 0
+              0 0
+              0 1];          
+Fcontinuous=[0 1 0 0
+             0 0 0 0
+             0 0 0 1
+             0 0 0 0];
+end
+
+%calculate state transition matrix here
+A=expm(Fcontinuous*dt);
+%Note: B,u continuous over time step, so zero-state response is just
+%  the (integral of the state transition matrix)*B*u
+B1 = (expm(Fcontinuous*dt)-eye(4))*inv(A)*Gcontinuous1;
+B2 = (expm(Fcontinuous*dt)-eye(4))*inv(A)*Gcontinuous2;
 
 Ppur=Peva;
 %This can be shunted off to a separate function
@@ -97,9 +120,11 @@ axisveck=[-20 20 -5 35];
 gameStateValsEva.nX=4;
 gameStateValsEva.R21=zeros(2,2);
 gameStateValsEva.R12=zeros(2,2);
-gameStateValsEva.F=Fcontinuous;
-gameStateValsEva.G1=Gcontinuous;
-gameStateValsEva.G2=Gcontinuous;
+if usesKumar
+    gameStateValsEva.F=Fcontinuous;
+    gameStateValsEva.G1=Gcontinuous1;
+    gameStateValsEva.G2=Gcontinuous2;
+end
 gameStateValsEva.W=Qnoiseeva;
 gameStateValsEva.V1=Peva(1:4,1:4);
 gameStateValsEva.V2=Ppur(1:4,1:4);
@@ -114,9 +139,11 @@ Qvec0Eva=[[reshape(Qeva, [16 1]); reshape(Qpur, [16,1]); zeros(32,1)] [reshape(Q
 gameStateValsPur.nX=4;
 gameStateValsPur.R21=zeros(2,2);
 gameStateValsPur.R12=zeros(2,2);
-gameStateValsPur.F=Fcontinuous;
-gameStateValsPur.G1=Gcontinuous;
-gameStateValsPur.G2=Gcontinuous;
+if usesKumar
+    gameStateValsPur.F=Fcontinuous;
+    gameStateValsPur.G1=Gcontinuous1;
+    gameStateValsPur.G2=Gcontinuous2;
+end
 gameStateValsPur.W=Qnoiseeva;
 gameStateValsPur.V1=Ppur(1:4,1:4);
 gameStateValsPur.V2=Peva(1:4,1:4);
@@ -130,27 +157,28 @@ Qvec0Pur= -[[reshape(Qpur, [16 1]); reshape(Qeva, [16,1]); zeros(32,1)] [reshape
 
 tvec0pPur=[0 tstep]; tvec0pEva=[0 tstep];
 tvec0qPur=[tstep 0]; tvec0qEva=[tstep 0];
-for ik=1:3 %fwd/bwd pass three times
-    propagateP_Pur=@(t,x) odeKumarP(t,x,Qvec0Pur,tvec0qPur,gameStateValsPur);
-    [tvec0pPur,Pvec0Pur]=ode45(propagateP_Pur,[0 tstep],Pvec0Pur(:,1));
-    Pvec0Pur=Pvec0Pur';
-    
-    propagateQ_Pur=@(t,x) odeKumarQ(t,x,Pvec0Pur,tvec0pPur,gameStateValsPur);
-    [tvec0qPur,Qvec0Pur]=ode45(propagateQ_Pur,[tstep 0],Qvec0Pur(:,1));
-    Qvec0Pur=Qvec0Pur';
-    %NOTE: CHECK THAT OUTPUTS ARE IN THE RIGHT TIME SERIES ORDER
-end
-
-%Created separate loops for P and E for faster debugging
-for ik=1:3 %fwd/bwd pass three times
-    propagateP_Eva=@(t,x) odeKumarP(t,x,Qvec0Eva,tvec0qEva,gameStateValsEva);
-    [tvec0pEva,Pvec0Eva]=ode45(propagateP_Eva,[0 tstep],Pvec0Eva(:,1));
-    Pvec0Eva=Pvec0Eva';
-    
-    propagateQ_Eva=@(t,x) odeKumarQ(t,x,Pvec0Eva,tvec0pEva,gameStateValsEva);
-    [tvec0qEva,Qvec0Eva]=ode45(propagateQ_Eva,[tstep 0],Qvec0Eva(:,1));
-    Qvec0Eva=Qvec0Eva';
-    %NOTE: CHECK THAT OUTPUTS ARE IN THE RIGHT TIME SERIES ORDER
+if usesKumar
+    %Created separate loops for P and E for faster debugging
+    for ik=1:3 %fwd/bwd pass three times
+        propagateP_Eva=@(t,x) odeKumarP(t,x,Qvec0Eva,tvec0qEva,gameStateValsEva);
+        [tvec0pEva,Pvec0Eva]=ode45(propagateP_Eva,[0 tstep],Pvec0Eva(:,1));
+        Pvec0Eva=Pvec0Eva';
+        
+        propagateQ_Eva=@(t,x) odeKumarQ(t,x,Pvec0Eva,tvec0pEva,gameStateValsEva);
+        [tvec0qEva,Qvec0Eva]=ode45(propagateQ_Eva,[tstep 0],Qvec0Eva(:,1));
+        Qvec0Eva=Qvec0Eva';
+        %NOTE: CHECK THAT OUTPUTS ARE IN THE RIGHT TIME SERIES ORDER
+    end
+%     for ik=1:3 %fwd/bwd pass three times
+%         propagateP_Pur=@(t,x) odeKumarP(t,x,Qvec0Pur,tvec0qPur,gameStateValsPur);
+%         [tvec0pPur,Pvec0Pur]=ode45(propagateP_Pur,[0 tstep],Pvec0Pur(:,1));
+%         Pvec0Pur=Pvec0Pur';
+%     
+%         propagateQ_Pur=@(t,x) odeKumarQ(t,x,Pvec0Pur,tvec0pPur,gameStateValsPur);
+%         [tvec0qPur,Qvec0Pur]=ode45(propagateQ_Pur,[tstep 0],Qvec0Pur(:,1));
+%         Qvec0Pur=Qvec0Pur';
+%         %NOTE: CHECK THAT OUTPUTS ARE IN THE RIGHT TIME SERIES ORDER
+%     end
 end
 
 if plotFlag==1
@@ -212,12 +240,12 @@ for ij=1:tstep:tmax
     gameState_p.xPur=xPurMean(1:4);
     gameState_p.xEva=xPurMean(5:8);
     gameState_p.dt=tstep;
-    gameState_p.kMax=1;
+    gameState_p.kMax=max_steps_to_predict;
     gameState_p.nu=2;
     uvelmatch=vmRGVO_max(xPur(1:4),xPur(5:8),upmax,2,tstep,uEvaBestPerformanceEstimate);
     Spur_p.uMat={0}; Seva_p.uMat={0};
-    for ik=1:length(utemp)
-        Spur_p.uMat{ik}=utemp(:,ik);
+    for ik=1:max(size(utemp_perm))
+        Spur_p.uMat{ik}=squeeze(utemp_perm(:,:,ik));
     end
     Spur_p.Jname='J_pur';
     Spur_p.fname='f_dynPur';
@@ -291,11 +319,11 @@ for ij=1:tstep:tmax
         gameState_e.xPur=xEva(1:4);
         gameState_e.xEva=xEva(5:8);
         gameState_e.dt=tstep;
-        gameState_e.kMax=1;
+        gameState_e.kMax=max_steps_to_predict;
         gameState_e.nu=2;
         Spur_e.uMat={0}; Seva_e.uMat={0};
-        for ik=1:length(utemp)
-            Spur_e.uMat{ik}=utemp(:,ik);
+        for ik=1:max(size(utemp_perm))
+            Spur_e.uMat{ik}=squeeze(utemp_perm(:,:,ik));
         end
         Spur_e.Jname='J_pur';
         Spur_e.fname='f_dynPur';
@@ -334,7 +362,7 @@ for ij=1:tstep:tmax
     if pursuerUsesGT || pursuerUsesVelmatch
         xTrue(1:4)=f_dynPur(xTrue(1:4),uPurTrue(:,1),tstep,zeros(2,1));
     elseif pursuerUsesKumar
-        ff=@(t,x) dynamicsKumar(t,x,Qvec0Pur,tvec0qPur,Fcontinuous,Gcontinuous,gameStateValsPur);
+        ff=@(t,x) dynamicsKumar(t,x,Qvec0Pur,tvec0qPur,Fcontinuous,Gcontinuous1,gameStateValsPur);
         [ttemp,xtemp]=ode45(ff,[0 tstep],[xTrue(1:4);xTrue(5:8)]); %#ok
         xTrue(1:4) = xtemp(end,1:4)';
     end
@@ -342,7 +370,7 @@ for ij=1:tstep:tmax
     if evaderUsesGT
         xTrue(5:8)=f_dynEva(xTrue(5:8),uEvaTrue(:,1),tstep,zeros(2,1));
     elseif evaderUsesKumar
-        ff=@(t,x) dynamicsKumar(t,x,Qvec0Eva,tvec0qEva,Fcontinuous,Gcontinuous,gameStateValsEva);
+        ff=@(t,x) dynamicsKumar(t,x,Qvec0Eva,tvec0qEva,Fcontinuous,Gcontinuous2,gameStateValsEva);
         [ttemp,xtemp]=ode45(ff,[0 tstep],[xTrue(5:8);xTrue(1:4)]);
         xTrue(5:8) = xtemp(end,1:4)';        
     end
@@ -361,10 +389,10 @@ for ij=1:tstep:tmax
     xTrueS{n+1}=xTrue;
     
 %     %cost calculation, need to debug error index length in J_pur
-%     e=xTrue(1:4)-xTrue(5:8);
-%     Jloc = e'*Spur_p.Jparams.Q*e + uPurTrue'*Spur_p.Jparams.Rself*uPurTrue + ...
-%         uEvaTrue'*Spur_p.Jparams.Ropp*uEvaTrue;
-%     Jp0=Jp0+Jloc;
+    e=xTrue(1:4)-xTrue(5:8);
+    Jloc = e'*Spur_p.Jparams.Q*e + uPurTrue(:,1)'*Spur_p.Jparams.Rself*uPurTrue(:,1) + ...
+        uEvaTrue(:,1)'*Spur_p.Jparams.Ropp*uEvaTrue(:,1);
+    Jp0=Jp0+Jloc;
     
     if plotFlag==1
     figure(1)

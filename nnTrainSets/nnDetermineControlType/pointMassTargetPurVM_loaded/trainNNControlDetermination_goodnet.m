@@ -1,4 +1,4 @@
-% clear;clc;
+clear;clc;
 
 rngseedno=41; 
 rng(rngseedno);
@@ -29,7 +29,7 @@ last_nontraining_iteration_frac=0.98; %fraction of data to be used for training
 %  0=load and combine .mats
 %  1=load full datset files
 %  2=assumed already loaded
-mode=2;
+mode=1;
 
 if mode==0
     file_to_load=[file_input_string,num2str(1),'.mat'];
@@ -192,6 +192,13 @@ net = trainNetwork(data_input,data_labels,network,options);
 %dd(:,1,1,1)=10*ones(5,1)
 %predict(net,dd)
 end
+
+
+%saveas(gcf,'filename.png')
+
+% %Add menu to trainimg
+% h = findall(groot,'Type','Figure');
+% h.MenuBar = 'figure';
 
 
 

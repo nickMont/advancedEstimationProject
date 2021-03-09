@@ -11,8 +11,12 @@ clear;clc;loadenv;
 %NOTE: CURRENTLY SET FOR U BASED ON VELOCITY MATCHING SCALE
 
 
-% rngseedno=2;
-% rng(rngseedno)
+rngseedno=2;
+rng(rngseedno)
+'DO NOT USE THIS CODE TO TRAIN UNTIL RNGSEED IS RESET OR REMOVED' %#ok<NOPTS>
+
+'NOTE: CHECK DYNAMICS FUNCTION IN USE FOR PROPAGATION AT LINE ~285' %#ok<NOPTS>
+
 numNNiter=1;
 
 flagHasTarget=true;
@@ -29,14 +33,12 @@ end
 
 for ikN=1:numNNiter
 
-currentStep=ikN/numNNiter*100    
+% currentStep=ikN/numNNiter*100    
 
 ctrTypeR=floor(rand*3);
 
 ctrTypeR=0;
-'DO NOT USE THIS CODE UNTIL CTRTYPER IS RANDOM AGAIN'
-
-ctrTypeR=0;
+'DO NOT USE THIS CODE TO TRAIN UNTIL CTRTYPER IS RANDOM AGAIN' %#ok<NOPTS>
 
 if ctrTypeR==1
     controlType='vmgt';
@@ -263,6 +265,7 @@ for ij=0:tstep:tmax
         end
         uEvaVM=uEvaEst;
     end
+    uEvaApplied=uEvaTrue
     
     Seva_e=Seva_p;
     Spur_e=Spur_p;
@@ -279,8 +282,13 @@ for ij=0:tstep:tmax
 %         error('inc')
     end
 
-    xTrue(1:4)=f_dynCD2(xTrue(1:4),uPurTrue(:,1),tstep,zeros(2,1),Spur_p.params);
-    xTrue(5:8)=f_dynCD2(xTrue(5:8),uEvaTrue(:,1),tstep,zeros(2,1),Seva_e.params);
+%     % NOTE CHECK CONSISTENCY WITH FDYNNAMES
+    % mmkf built for true
+    xTrue(1:4)=f_dynPur(xTrue(1:4),uPurTrue(:,1),tstep,zeros(2,1),Spur_p.params);
+    xTrue(5:8)=f_dynEva(xTrue(5:8),uEvaTrue(:,1),tstep,zeros(2,1),Seva_e.params);
+    % network trained on CD2
+%     xTrue(1:4)=f_dynCD2(xTrue(1:4),uPurTrue(:,1),tstep,zeros(2,1),Spur_p.params);
+%     xTrue(5:8)=f_dynCD2(xTrue(5:8),uEvaTrue(:,1),tstep,zeros(2,1),Seva_e.params);
 
     z=xTrue+chol(QnoiseStack)'*rand(8,1);
 
@@ -381,7 +389,7 @@ for ij=0:tstep:tmax
             end
             if flag==0
                 uee=randsample(1:length(Seva_e.uMat),1,true,ue);
-                uEvaTrue=Seva_e.uMat{uee}(:,1);
+                uEvaFilt=Seva_e.uMat{uee}(:,1);
                 uPurEst=zeros(gameState_p.nu,gameState_p.kMax);
                 for ik=1:length(Spur_e.uMat)
                     uPurEst=uPurEst+up(ik)*Spur_e.uMat{ik}(:,1);
@@ -389,7 +397,7 @@ for ij=0:tstep:tmax
                 %scaleS{n}(2)=uvec(uee);
                 QinflateEva=Qnoiseeva+blkdiag(1*eye2, zer2);
             else
-                uEvaTrue=ue;
+                uEvaFilt=ue;
                 uPurEst=up;
                 %scaleS{n}(2)=uvec(tmp2);
             end
@@ -397,23 +405,23 @@ for ij=0:tstep:tmax
         end
         if iN==1 %VMGT
             uPur1=uPurEst;
-            uEva1=uEvaTrue;
+            uEva1=uEvaFilt
             controlType=heurTypeStruc{2};
             RuStack{1}=.05*eye(2);
         elseif iN==2 %GT
             uPur2=uPurEst;
-            uEva2=uEvaTrue;
+            uEva2=uEvaFilt
             controlType=heurTypeStruc{3};
             RuStack{2}=.05*eye(2);
         elseif iN==3 %VM
             uPur3=uPurEst;
-            uEva3=uEvaTrue;
+            uEva3=uEvaFilt
             controlType=heurTypeStruc{1};
             RuStack{3}=.2*eye(2);
         else
             error('iN error');
         end
-        uEvaTempStack{iN}=uEvaTrue;
+        uEvaTempStack{iN}=uEvaFilt;
 %         uIN=uEvaTrue
     end
         % "measure"
@@ -452,25 +460,30 @@ for ij=0:tstep:tmax
     mu=muTemp/sum(muTemp)
     muHist=[muHist mu];
     
-    load nnTrainSets\nnDetermineControlType\pointMassTargetPurVM\network1.mat
-    classify(net,qrXt)
-    
-    figure(1);clf; figset
-    hold on
-    plot(1:length(muHist),muHist(1,:),'r')
-    hold on
-    plot(1:length(muHist),muHist(2,:),'b')
-    hold on
-    plot(1:length(muHist),muHist(3,:),'g')
-    figset
-    
 end
 
+
+% figure(1);clf; figset
+% hold on
+% plot((1:length(muHist))*tstep,muHist(1,:),'r')
+% hold on
+% plot((1:length(muHist))*tstep,muHist(2,:),'b')
+% hold on
+% plot((1:length(muHist))*tstep,muHist(3,:),'g')
+% figset
+% legend('GT','VMGT','VM')
+% xlabel('Time (s)')
+% ylabel('Probability')
+% figset
 
 xStore{ikN}=xBt;
 uStore{1,ikN}=uBp;
 uStore{2,ikN}=uBe;
 measStore{ikN}=zB;
+
+load nnTrainSets\nnDetermineControlType\pointMassTargetPurVM_loaded\network1.mat
+qrXt=[qrTrueAll;reshape(xBt, [336 1])];
+classify(net,qrXt)
 
 
 if plotEndFlag==1
@@ -516,3 +529,6 @@ end
 end
 
 flagUsedVMforPur=flagPursuerUsesPureVM
+
+
+

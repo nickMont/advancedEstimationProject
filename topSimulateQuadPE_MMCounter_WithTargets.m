@@ -33,6 +33,7 @@ FLAG_useGameTheoreticController=true;
 FLAG_usePureVelMatchController=false;
 FLAG_tryMotionPredictionInVM2=false; %try heuristic for modifying motion direction prediction
 FLAG_tryVMGTbutBypassHeuristics=false;
+
 numRefinements=0; %number of refinements for VM heading
 % output: 8.8181e+03
 % omega:  8.8181e+03
@@ -92,7 +93,7 @@ xEva=[ewxvPur;ewxvEva];
 xTrue=xPur;
 
 numTargets=2;
-evaTrueTargetIndex=2;
+evaTrueTargetIndex=1;
 targetLocationVec{1}=[-10;-10;0];
 targetLocationVec{2}=[-10;-5;0];
 QtargetP=diag([0;0;0]);
@@ -151,6 +152,7 @@ for t=t0:dt:tmax
                 gameState.discType='overX';
                 gameState.uMaxP=umax;
                 gameState.uEvaEstForVM=uEvaEst;
+                Spur.uMat={0}; Seva.uMat={0};
                 if strcmp(Spur.controlType,'vmquad')
                     for ik=1:length(uvec)
                         Spur.uMat{ik}=upmax*uvec(ik);
@@ -333,7 +335,7 @@ for t=t0:dt:tmax
         Paug=PhatE(:,:,ij); Qk=RuMMF;
         if min(eig(Paug))>0 %check for impossible models
             % Propagate
-            [xhatEp1,Pp1]=ukfPropagate(xhatE(:,ij),PhatE(:,:,ij),uEvaMMF,RuMMF,dt,'f_dynEvaQuad');
+            [xhatEp1,Pp1]=ukfPropagate(xhatE(:,ij),PhatE(:,:,ij),uEvaMMF,RuMMF,dt,f_dynEvaQuad);
             
             % Measure
             [xhatE(:,ij),PhatE(:,:,ij),nu,Sk,Wk]=kfMeasure(xhatEp1,Pp1,zMeas,eye(length(ewxvEva)),Rk);
@@ -413,9 +415,9 @@ end
 if nmod>=6
 plot(dt*(0:34),muHist(6,1:35),'k-^')
 end
-if nmod>=7
-plot(dt*(0:34),muHist(7,1:35),'k-v')
-end
+% if nmod>=7
+% plot(dt*(0:34),muHist(7,1:35),'k-v')
+% end
 figset
 xlabel('Time Elapsed (s)')
 ylabel('Model Probability')

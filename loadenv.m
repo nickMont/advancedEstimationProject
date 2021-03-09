@@ -1,1 +1,1 @@
-addpath('src/quadsim','src/fdyn_and_j')
+addpath('src/quadsim','src/fdyn_and_j','src/kumarODE')

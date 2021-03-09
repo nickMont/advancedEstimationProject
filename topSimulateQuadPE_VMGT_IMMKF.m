@@ -24,6 +24,7 @@ uEvaType='vm';
 Spur.controlType='gt_overx'; %vmquad, gt_overx
 Seva.controlType='gt_overx';
 flagRunMMKF=false;
+flagRunIMMKF=true; %note: both flagRunMMKF AND flagRunIMMKF must be set true to run IMMKF
 
 scaleVec=0.8; %magnitude of desired uE control relative to uP control
 vmtune=0.8; %deceleration parameter for VM
@@ -108,6 +109,17 @@ PhatE=repmat(0.001*eye(length(ewxvEva)),[1 1 nmod]);
 mu=1/nmod*ones(nmod,1);
 muHist=mu;
 Rk=0.1*eye(length(ewxvEva));
+if flagRunIMMKF
+    Mij=[0.96 0.01 0.01 0.01 0.01
+        0.01 0.96 0.01 0.01 0.01
+        0.01 0.01 0.96 0.01 0.01
+        0.01 0.01 0.01 0.96 0.01
+        0.01 0.01 0.01 0.01 0.96];
+    [aMij,bMij]=size(Mij);
+    if aMij~=nmod || bMij~=nmod
+        error('Mij size does not match number of models')
+    end
+end
 
 tic
 for t=t0:dt:tmax

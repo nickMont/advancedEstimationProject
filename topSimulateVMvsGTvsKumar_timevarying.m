@@ -1,4 +1,4 @@
-clear;clc;
+clear;clc;loadenv;
 % Main function for 2D game AI for pop-the-balloon
 
 %
@@ -26,7 +26,7 @@ evaderUsesKumar=false;
 %Pursuer control type info
 pursuerUsesVelmatch=false;
 pursuerUsesGT=true;
-pursuerUsesKumar=false;
+pursuerUsesKumar=true;
 useNNforGT=false;
 
 %Will velmatching use a control estimate?
@@ -72,9 +72,9 @@ H14=[Hpur zeros(4,6)];
 
 dt=tstep;
 n=2; %n is dim(x)/2 so I can copy/paste dynamic functions
-Abk1=[eye(n) dt*eye(n); zeros(n,n) 0.3*eye(n)]; %Apur
-Abk2=[eye(n) dt*eye(n); zeros(n,n) 0.3*eye(n)]; %Aeva
-Aeva=blkdiag(Abk1,Abk2);
+% Abk1=[eye(n) dt*eye(n); zeros(n,n) 0.3*eye(n)]; %Apur
+% Abk2=Abk1;
+% Aeva=blkdiag(Abk1,Abk2);
 Gnoiseeva=blkdiag([eye(n)*dt^2/2;eye(n)*dt],[eye(n)*dt^2/2;eye(n)*dt]);
 Qnoiseeva=0.002*eye(4);
 Qnoisepur=Qnoiseeva;
@@ -88,12 +88,23 @@ if evaderUsesKumar||pursuerUsesKumar
     usesKumar=true;
 end
 if usesKumar
-Gcontinuous=[0 0
-   0 0
-   1 0
-   0 1];
-[Fcontinuous,Aapprx]=calculateFforKumar(Abk2,tstep,[1 0 1 0; 0 1 0 1; .01 0 -.21 0; 0 .01 0 -.21]); %NOTE:these are subtracted
+Gcontinuous1=[0
+              1
+              0
+              0];
+Gcontinuous2=[0
+              0
+              0
+              1];          
+Fcontinuous=[0 1 0 0
+             0 0 0 0
+             0 0 0 1
+             0 0 0 0];
 end
+
+%calculate state transition matrix here
+A=expm(derp)
+Aeva=blkdiag(Abk1,Abk2);
 
 Ppur=Peva;
 %This can be shunted off to a separate function
@@ -108,8 +119,8 @@ gameStateValsEva.R21=zeros(2,2);
 gameStateValsEva.R12=zeros(2,2);
 if usesKumar
     gameStateValsEva.F=Fcontinuous;
-    gameStateValsEva.G1=Gcontinuous;
-    gameStateValsEva.G2=Gcontinuous;
+    gameStateValsEva.G1=Gcontinuous1;
+    gameStateValsEva.G2=Gcontinuous2;
 end
 gameStateValsEva.W=Qnoiseeva;
 gameStateValsEva.V1=Peva(1:4,1:4);
@@ -230,6 +241,7 @@ for ij=1:tstep:tmax
     gameState_p.kMax=max_steps_to_predict;
     gameState_p.nu=2;
     uvelmatch=vmRGVO_max(xPur(1:4),xPur(5:8),upmax,2,tstep,uEvaBestPerformanceEstimate);
+    Spur_p.uMat={0}; Seva_p.uMat={0};
     for ik=1:max(size(utemp_perm))
         Spur_p.uMat{ik}=squeeze(utemp_perm(:,:,ik));
     end
@@ -263,6 +275,7 @@ for ij=1:tstep:tmax
             gameState_p.dt=tstep;
             gameState_p.kMax=1;
             gameState_p.nu=2;
+            Spur_p.uMat={0}; Seva_p.uMat={0};
             for ik=1:length(utemp)
                 Spur_p.uMat{ik}=utemp(:,ik);
             end
@@ -306,6 +319,7 @@ for ij=1:tstep:tmax
         gameState_e.dt=tstep;
         gameState_e.kMax=max_steps_to_predict;
         gameState_e.nu=2;
+        Spur_e.uMat={0}; Seva_e.uMat={0};
         for ik=1:max(size(utemp_perm))
             Spur_e.uMat{ik}=squeeze(utemp_perm(:,:,ik));
         end

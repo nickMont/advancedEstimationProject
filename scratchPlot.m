@@ -49,42 +49,42 @@
 % figset
 
 % %PES paper
-figure(2);clf;
-figset
-subplot(3,1,1);
-plot(1:n+1,dJS(1,:),'-.k');
-hold on
-plot(1:n+1,dJS(2,:),'-ok');
-ax=gca;
-axis([0 30 ax.YLim(1) ax.YLim(2)])
-legend('\DeltaQ_{xx}','\DeltaQ_{yy}')
-xlabel('Time (s)');
-ylabel('Cost (m^{-2})');
-figset
-
-subplot(3,1,2);
-figset
-plot(1:n+1,dJS(3,:),'-.k');
-hold on
-plot(1:n+1,dJS(4,:),'-ok');
-ax=gca;
-axis([0 30 ax.YLim(1) ax.YLim(2)])
-legend('\DeltaQ_{vx}','\DeltaQ_{vy}');
-xlabel('Time (s)');
-ylabel('Cost (m^{-2}s^2)');
-figset
-
-subplot(3,1,3);
-figset
-plot(1:n+1,dJS(5,:),'-.k');
-hold on
-plot(1:n+1,dJS(6,:),'-ok');
-ax=gca;
-axis([0 30 ax.YLim(1) ax.YLim(2)])
-legend('\DeltaR_{x}','\DeltaR_{y}');
-xlabel('Time (s)');
-ylabel('Cost (m^{-2}s^4)');
-figset
+% figure(2);clf;
+% figset
+% subplot(3,1,1);
+% plot(1:n+1,dJS(1,:),'-.k');
+% hold on
+% plot(1:n+1,dJS(2,:),'-ok');
+% ax=gca;
+% axis([0 30 ax.YLim(1) ax.YLim(2)])
+% legend('\DeltaQ_{xx}','\DeltaQ_{yy}')
+% xlabel('Time (s)');
+% ylabel('Cost (m^{-2})');
+% figset
+% 
+% subplot(3,1,2);
+% figset
+% plot(1:n+1,dJS(3,:),'-.k');
+% hold on
+% plot(1:n+1,dJS(4,:),'-ok');
+% ax=gca;
+% axis([0 30 ax.YLim(1) ax.YLim(2)])
+% legend('\DeltaQ_{vx}','\DeltaQ_{vy}');
+% xlabel('Time (s)');
+% ylabel('Cost (m^{-2}s^2)');
+% figset
+% 
+% subplot(3,1,3);
+% figset
+% plot(1:n+1,dJS(5,:),'-.k');
+% hold on
+% plot(1:n+1,dJS(6,:),'-ok');
+% ax=gca;
+% axis([0 30 ax.YLim(1) ax.YLim(2)])
+% legend('\DeltaR_{x}','\DeltaR_{y}');
+% xlabel('Time (s)');
+% ylabel('Cost (m^{-2}s^4)');
+% figset
 % 
 % xP=zeros(2,n+1);xE=zeros(2,n+1);
 % for ijk=1:n+1
@@ -127,3 +127,31 @@ figset
 % ylabel('y-position (m)')
 % legend('Pursuer, quad','Evader, quad','Pursuer, PM','Evader, PM','Location','southeast');
 % figset
+
+
+
+
+% %<<>> clean this up
+% figset
+% figure(2);clf;
+% plottype=['k-x','k-*','k-0'];
+% plot(dt*(0:34),muHist(1,1:35),'k-x')
+% hold on
+% plot(dt*(0:34),muHist(2,1:35),'k-*')
+% hold on
+% plot(dt*(0:34),muHist(5,1:35),'k-s')
+% hold on
+% plot(dt*(0:34),muHist(8,1:35),'k-o')
+% hold on
+% plot(dt*(0:34),sum(muHist([3 4 6 7 9:12],1:35))/8,'k-^')
+% % if nmod>=7
+% % plot(dt*(0:34),muHist(7,1:35),'k-v')
+% % end
+% figset
+% xlabel('Time Elapsed (s)')
+% ylabel('Model Probability')
+% legend('VM/GT-1','GT-1','VMGTHeur-1','GT-2','other')
+% figset
+% %legend('Nash strategy','Non-Nash strategy') %update per side
+
+

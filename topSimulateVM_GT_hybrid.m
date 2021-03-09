@@ -131,6 +131,7 @@ for ij=0:tstep:tmax
         gameState_p.kMax=1;
         gameState_p.nu=2;
         uhat=unit_vector(vmRGVO_tune(xTrue(1:4),xTrue(5:8),upmax,2,tstep,uEvaVM,safeDecelParamVM));
+        Spur_p.uMat={0}; Seva_p.uMat={0};
         if strcmp(controlType,'vmgt')
             for ik=1:length(uvec)
                 Spur_p.uMat{ik}=upmax*uvec(ik)*uhat;
@@ -185,6 +186,7 @@ for ij=0:tstep:tmax
         gameState_e.kMax=1;
         gameState_e.nu=2;
         uhat=unit_vector(vmRGVO_tune(xTrue(1:4),xTrue(5:8),upmax,2,tstep,uEvaVM,safeDecelParamVM));
+        Spur_e.uMat={0}; Seva_e.uMat={0};
         for ik=1:length(uvec)
             Spur_e.uMat{ik}=upmax*uvec(ik)*uhat;
         end

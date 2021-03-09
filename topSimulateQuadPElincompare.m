@@ -53,6 +53,7 @@ for t=t0:dt:tmax
     gameState_p.kMax=1;
     gameState_p.nu=2;
     gameState_p.discType='overX';
+    Spur_p.uMat={0}; Seva_p.uMat={0};
     for ik=1:length(uPur)
         Spur_p.uMat{ik}=utemp(:,ik);
     end
