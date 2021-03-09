@@ -31,8 +31,10 @@ Psi = atan2(-lambdaX/lambdaM,-lambdaY/lambdaM);
 lambdaDotDotX = -lambdaX;
 lambdaDotDotY = -lambdaY;
 
-xDot = y-mu*sin(phi+T);
-yDot = -x+1-mu*cos(phi+T);
+% xDot = y-mu*sin(phi+T);
+% yDot = -x+1-mu*cos(phi+T);
+xDot = u*y - mu*sin(Psi);
+yDot = -u*x+1 - mu*cos(Psi);
 
 
 stateDot=[xDot
