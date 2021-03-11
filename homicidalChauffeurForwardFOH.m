@@ -11,7 +11,8 @@ if strcmp(params.PsiType,'step')
     indP = find(PsiMat(:,1)>t,1);
     Psi = PsiMat(indP-1,2);
 elseif strcmp(params.PsiType,'linear')
-    Psi = PsiMat(1)*t+PsiMat(2);
+    Psi = polyval(PsiMat,t);
+    % Psi = PsiMat(1)*t+PsiMat(2); 
 elseif strcmp(params.PsiType,'interp')
     Psi = interp1(PsiMat(:,1),PsiMat(:,2),t);
 end

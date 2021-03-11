@@ -91,7 +91,7 @@ uCombs = allcomb(uSet,uSet); %0-1 transition
 TmaxPos = 2*pi;
 
 %generate transition time
-dt = 0.1;
+dt = 0.05;
 tTransitionSet = (0+dt):dt:TmaxPos;
 uCombs2 = allcomb(1:nu1,tTransitionSet);
 [nu2,~]=size(uCombs2);
@@ -122,10 +122,14 @@ end
 nuF=max(size(uPSet));
 
 % generate Psi set from linear form
-mSet = -1:0.1:1;
-bSet = -1:0.1:1;
+dM=0.05;
+dB=dM;
+mSet = -pi/2:dM:pi/2;
+bSet = -pi:dB:pi;
+qSet = -0.1:0.05:0.01;
 
 PsiComb = allcomb(mSet,bSet);
+% PsiComb = allcomb(qSet,mSet,bSet);
 [npF,~]=size(PsiComb);
 
 PsiSet={};
@@ -156,7 +160,8 @@ gameState.params.L=L;
 minAll=minimax1(temp);
 [cullP,cullE]=size(temp2);
 minCull=minimax1(temp2);
-
+discTime=temp2(minCull(1),minCull(2))
+trueTime=Tmax
 
 
 

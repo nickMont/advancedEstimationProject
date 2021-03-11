@@ -26,6 +26,7 @@ Jeva=zeros(nmodP,nmodE);
 tmaxRun=gameState.tMaxSim;
 noCapErr = 99; % capture "time" if no capture occurs
 for iP=1:nmodP
+    pctC=iP/nmodP*100
     for iE=1:nmodE        
         uP = Spur.uMat{iP,1};
         uE = Seva.uMat{iE,1};
