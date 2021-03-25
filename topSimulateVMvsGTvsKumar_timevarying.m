@@ -103,7 +103,7 @@ Fcontinuous=[0 1 0 0
 end
 
 %calculate state transition matrix here
-A=expm(derp)
+A=expm(derp);
 Aeva=blkdiag(Abk1,Abk2);
 
 Ppur=Peva;
@@ -279,14 +279,14 @@ for ij=1:tstep:tmax
             for ik=1:length(utemp)
                 Spur_p.uMat{ik}=utemp(:,ik);
             end
-            Spur_p.Jname='J_pur';
+            Spur_p.Jname='evalCostFunc';
             Spur_p.fname='f_dynPur';
             Spur_p.Jparams.Q=Qpur;
             Spur_p.Jparams.Rself=Rpur;
             Spur_p.Jparams.Ropp=zeros(2,2);
             Seva_p.uMat = Spur_p.uMat;
             Spur_p.uMat{length(utemp)+1}=uvelmatch;
-            Seva_p.Jname='J_eva';
+            Seva_p.Jname='evalCostFunc';
             Seva_p.fname='f_dynEva';
             Seva_p.Jparams.Q=diag(xPurMean(9:12));
             Seva_p.Jparams.Rself=diag(xPurMean(13:14));
