@@ -28,16 +28,15 @@ evaderUsesKumar=~evaderUsesGT;
 pursuerUsesGT=evaderUsesGT;
 pursuerUsesKumar=~pursuerUsesGT;
 
+% Attempt to saturate infeasible Kumar controls
+flagSaturateKumarControls = true;
+
 % Try discrete linear propagation instead of ode45
 gameStateVals.tryLinearPropagation = false;
 
-%Will velmatching use a control estimate?
-%uEvaBestPerformanceEstimate=[0.9;0]; %lower can produce oscillations
-uEvaBestPerformanceEstimate=[0;0]; 
-
 cd = 0.01; %drag coefficient, always positive
 
-tstep=1;
+tstep=0.5;
 tmax=10;
 dt = tstep;
 tplan = tmax;
@@ -49,7 +48,7 @@ kmax = 1;
 % tSet = 0:0.25:0.5; %multiplied by pi in mapUtempToUvec
 rSet = (0 : 0.25 : 1);
 tSet = (0 : 1/4 : 2); %multiplied by pi in mapUtempToUvec
-umax=0.5;
+umax=1;
 umaxP=umax;
 umaxE=umax;
 if pursuerUsesGT || evaderUsesGT
@@ -69,10 +68,13 @@ Game.uType="velstep";
 Game.dt=tstep;
 
 % Initial state
-xTrue=[1 1 0 0]';
+% xTrue=[1 1 0 0]'; %test1
+xTrue=[1 0.5 0 0]'; %test2,3
 
 Qpur = diag([10 10 10 10]); Rpur = diag([10 10]);
-Qeva = diag([10 10 0 0]); Reva = diag([50 50]);
+% Qeva = diag([10 10 0 0]); Reva = diag([50 50]); %test1
+% Qeva = diag([10 10 0 0]); Reva = diag([20 20]); %test2
+Qeva = diag([10 10 0 0]); Reva = diag([5 5]); %test3
 
 qrTrue=[diag(Qeva);diag(Reva)];
 
@@ -250,7 +252,7 @@ for tind = 0:tstep:tmax-tstep
             Q3*(zPur-zEva));
         uN = norm(uPurTrue);
         uN = saturationF(uN,0,umaxP);
-        if uN>1e-10
+        if uN>1e-10 && flagSaturateKumarControls
             uPurTrue = uN*uPurTrue/norm(uPurTrue);
         end
     end
@@ -258,7 +260,7 @@ for tind = 0:tstep:tmax-tstep
         uEvaTrue = -inv(gameStateVals.R22)*gameStateVals.G2'*Q2*zEva;
         uN = norm(uEvaTrue);
         uN = saturationF(uN,0,umaxE);
-        if uN>1e-10
+        if uN>1e-10 && flagSaturateKumarControls
             uEvaTrue = uN*uEvaTrue/norm(uEvaTrue);
         end
     end
@@ -293,181 +295,6 @@ toc
 J1f=J1
 J2f=J2
 
-
-% for ij=0:tstep:tmax
-%     n=n+1
-%     tic
-%     
-%     %reset noise inflations
-%     QinflatePur=Qnoisepur;
-%     QinflateEva=Qnoiseeva;
-%     
-%     xPurMean=[xPur;diag(Qeva);diag(Reva)];
-%     
-%     %Preload GT params used in one or more GT solvers
-%     gameState_p.xPur=xPurMean(1:4);
-%     gameState_p.xEva=xPurMean(5:8);
-%     gameState_p.dt=tstep;
-%     gameState_p.kMax=max_steps_to_predict;
-%     gameState_p.nu=2;
-%     uvelmatch=vmRGVO_max(xPur(1:4),xPur(5:8),upmax,2,tstep,uEvaBestPerformanceEstimate);
-%     Spur_p.uMat={0}; Seva_p.uMat={0};
-%     for ik=1:max(size(utemp_perm))
-%         Spur_p.uMat{ik}=squeeze(utemp_perm(:,:,ik));
-%     end
-%     Spur_p.Jname='J_pur';
-%     Spur_p.fname='f_dynPur';
-%     Spur_p.Jparams.Q=Qpur;
-%     Spur_p.Jparams.Rself=Rpur;
-%     Spur_p.Jparams.Ropp=zeros(2,2);
-%     Seva_p.uMat = Spur_p.uMat;
-%     Spur_p.uMat{length(utemp)+1}=uvelmatch;
-%     Seva_p.Jname='J_eva';
-%     Seva_p.fname='f_dynEva';
-%     Seva_p.Jparams.Q=diag(xPurMean(9:12));
-%     Seva_p.Jparams.Rself=diag(xPurMean(13:14));
-%     Seva_p.Jparams.Ropp=zeros(2,2);
-%     
-%     if pursuerUsesVelmatch
-%         uPurTrue=uvelmatch;
-%         uEvaEst=zeros(2,1);
-%     elseif pursuerUsesGT
-%         if useNNforGT
-%             qqrr=0.1*[diag(Qpur); diag(Qeva); diag(Rpur); diag(Reva)];
-%             ministate=xPurMean;
-%             uStack=predict(network1,[ministate;qqrr]);
-%             uPurTrue=uStack(1:2);
-%             uEvaEst=uStack(3:4);
-%         else
-%             % Guessing pursuer
-%             gameState_p.xPur=xPurMean(1:4);
-%             gameState_p.xEva=xPurMean(5:8);
-%             gameState_p.dt=tstep;
-%             gameState_p.kMax=1;
-%             gameState_p.nu=2;
-%             Spur_p.uMat={0}; Seva_p.uMat={0};
-%             for ik=1:length(utemp)
-%                 Spur_p.uMat{ik}=utemp(:,ik);
-%             end
-%             Spur_p.Jname='evalCostFunc';
-%             Spur_p.fname='f_dynPur';
-%             Spur_p.Jparams.Q=Qpur;
-%             Spur_p.Jparams.Rself=Rpur;
-%             Spur_p.Jparams.Ropp=zeros(2,2);
-%             Seva_p.uMat = Spur_p.uMat;
-%             Spur_p.uMat{length(utemp)+1}=uvelmatch;
-%             Seva_p.Jname='evalCostFunc';
-%             Seva_p.fname='f_dynEva';
-%             Seva_p.Jparams.Q=diag(xPurMean(9:12));
-%             Seva_p.Jparams.Rself=diag(xPurMean(13:14));
-%             Seva_p.Jparams.Ropp=zeros(2,2);
-%             % Propagate to next time step
-%             [up,ue,flag]=f_dyn(Spur_p,Seva_p,gameState_p,zeros(4,1));
-%             if flag==0
-%                 upp=randsample(1:length(Spur_p.uMat),1,true,up);
-%                 uPurTrue=Spur_p.uMat{upp}(:,1);
-%                 uEvaEst=zeros(gameState_p.nu,gameState_p.kMax);
-%                 for ik=1:length(Seva_p.uMat)
-%                     uEvaEst=uEvaEst+ue(ik)*Seva_p.uMat{ik}(:,1);
-%                 end
-%                 QinflatePur=Qnoisepur+blkdiag(zer2,1*eye2);
-%             else
-%                 uPurTrue=up;
-%                 uEvaEst=ue;
-%             end
-%         end
-%     end
-%     if pursuerUsesGT || pursuerUsesVelmatch
-%         xPur_bar(1:4)=f_dynPur(xPurMean(1:4),uPurTrue,tstep,zeros(2,1));
-%         xPur_bar(5:8)=f_dynEva(xPurMean(5:8),uEvaEst ,tstep,zeros(2,1));
-%     end
-%     
-%     if evaderUsesGT
-%         %Omniscient evader
-%         gameState_e.xPur=xEva(1:4);
-%         gameState_e.xEva=xEva(5:8);
-%         gameState_e.dt=tstep;
-%         gameState_e.kMax=max_steps_to_predict;
-%         gameState_e.nu=2;
-%         Spur_e.uMat={0}; Seva_e.uMat={0};
-%         for ik=1:max(size(utemp_perm))
-%             Spur_e.uMat{ik}=squeeze(utemp_perm(:,:,ik));
-%         end
-%         Spur_e.Jname='J_pur';
-%         Spur_e.fname='f_dynPur';
-%         Spur_e.Jparams.Q=Qpur;
-%         Spur_e.Jparams.Rself=Rpur;
-%         Spur_e.Jparams.Ropp=zeros(2,2);
-%         Seva_e.uMat = Spur_e.uMat;
-%         Seva_e.Jname='J_eva';
-%         Seva_e.fname='f_dynEva';
-%         Seva_e.Jparams.Q=Qeva;
-%         Seva_e.Jparams.Rself=Reva;
-%         Seva_e.Jparams.Ropp=zeros(2,2);
-%         gameState_e = gameState_p;
-%         gameState_e.xPur=xEva(1:4);
-%         gameState_e.xEva=xEva(5:8);
-%         if evaderIsOblivious
-%             uPurEst=zeros(2,1);
-%             uEvaTrue=upmax/3*traveldirEva;
-%         else
-%             [up,ue,flag]=f_dyn(Spur_e,Seva_e,gameState_e,zeros(4,1));
-%             if flag==0
-%                 uee=randsample(1:length(Seva_e.uMat),1,true,ue);
-%                 uEvaTrue=Seva_e.uMat{uee}(:,1);
-%                 uPurEst=zeros(gameState_p.nu,gameState_p.kMax);
-%                 for ik=1:length(Spur_e.uMat)
-%                     uPurEst=uPurEst+up(ik)*Spur_e.uMat{ik}(:,1);
-%                 end
-%                 QinflateEva=Qnoiseeva+blkdiag(1*eye2, zer2);
-%             else
-%                 uEvaTrue=ue;
-%                 uPurEst=up;
-%             end
-%         end
-%     end
-%     
-%     if pursuerUsesKumar
-%         uPurTrue = -
-%         
-%     end
-%     
-%     if evaderUsesKumar
-%         
-%     end
-%     
-% 
-%     % Measurement
-%     zPur=Hpur*xTrue+chol(Rnoisepur)'*randn(4,1);
-%     zEva=Heva*xTrue+chol(Rnoiseeva)'*randn(4,1);
-%     
-%     if pursuerUsesGT || pursuerUsesVelmatch
-%         [xPur,Ppur]=kfstep(xPur,zPur,Aeva,Bnoiseeva,[uPurTrue;uEvaEst],Gnoiseeva,QinflatePur,Ppur,Heva,Rnoiseeva);
-%         %NOTE: PROPAGATE FILTER HERE
-%     end
-%     if evaderUsesGT
-%         [xEva,Peva]=kfstep(xEva,zEva,Aeva,Bnoiseeva,[uPurEst;uEvaTrue],Gnoiseeva,QinflateEva,Peva,Heva,Rnoisepur);
-%     end
-%     xTrueS{n+1}=xTrue;
-%     
-% % %     %cost calculation, need to debug error index length in J_pur
-% %     e=xTrue(1:4)-xTrue(5:8);
-% %     Jloc = e'*Spur_p.Jparams.Q*e + uPurTrue(:,1)'*Spur_p.Jparams.Rself*uPurTrue(:,1) + ...
-% %         uEvaTrue(:,1)'*Spur_p.Jparams.Ropp*uEvaTrue(:,1);
-% %     Jp0=Jp0+Jloc;
-%     
-%     if plotFlag==1
-%     figure(1)
-%     pause(.1)
-%     delete(f1); delete(f2)
-%     f1=scatter(xTrue(1),xTrue(2),'b');
-%     hold on
-%     f2=scatter(xTrue(5),xTrue(6),'r');
-%     axis(axisveck)
-%     end
-%     
-%     tThisStep=toc
-% end
 
 if plotEndFlag==1
 %     figure(2);clf;
@@ -514,3 +341,29 @@ if plotEndFlag==1
     figset
     
 end
+
+u1Vec = vecnorm(u1Stack);
+u2Vec = vecnorm(u2Stack);
+
+figure(7);clf;
+subplot(2,1,1)
+plot(tStack,u1Vec);
+title('Pursuer control')
+axis([0 max(tStack) 0 1.1])
+subplot(2,1,2)
+plot(tStack,u2Vec);
+title('Evader control')
+axis([0 max(tStack) 0 1.1])
+
+
+% q1mat=zeros(4,4,length(Qvec0Pur));
+% e1mat=zeros(1,length(Qvec0Pur));
+% for ij=1:length(Qvec0Pur)
+%     Q1 = QvecToMats(Qvec0Pur(:,ij),nx);
+%     q1mat(:,:,ij) = Q1;
+%     e1mat(ij) = max(abs(eig(Q1)));
+% end
+
+
+
+    
