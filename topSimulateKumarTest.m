@@ -21,7 +21,7 @@ plotEndFlag=0;
 npart=500;
 
 %Evader control type info
-evaderUsesGT=1;
+evaderUsesGT=0;
 evaderUsesKumar=~evaderUsesGT;
 
 %Pursuer control type info
@@ -36,19 +36,22 @@ gameStateVals.tryLinearPropagation = false;
 
 cd = 0.01; %drag coefficient, always positive
 
-tstep=0.5;
-tmax=10;
+% Time info
+tstep = 0.01;
+tmax = 10;
 dt = tstep;
 tplan = tmax;
 kmax = floor(tplan/tstep);
 kmax = 1;
+
+% Control info
+umax=1;
 
 %utemp=permn(-2:.5:2,2)';
 % rSet = -(0:0.2:1);
 % tSet = 0:0.25:0.5; %multiplied by pi in mapUtempToUvec
 rSet = (0 : 0.25 : 1);
 tSet = (0 : 1/4 : 2); %multiplied by pi in mapUtempToUvec
-umax=1;
 umaxP=umax;
 umaxE=umax;
 if pursuerUsesGT || evaderUsesGT
@@ -68,13 +71,15 @@ Game.uType="velstep";
 Game.dt=tstep;
 
 % Initial state
-% xTrue=[1 1 0 0]'; %test1
-xTrue=[1 0.5 0 0]'; %test2,3
+xTrue=[1 1 0 0]'; %test1
+% xTrue=[1 0.5 0 0]'; %test2,3
 
 Qpur = diag([10 10 10 10]); Rpur = diag([10 10]);
-% Qeva = diag([10 10 0 0]); Reva = diag([50 50]); %test1
+Qeva = diag([10 10 0 0]); Reva = diag([50 50]); %test1
 % Qeva = diag([10 10 0 0]); Reva = diag([20 20]); %test2
-Qeva = diag([10 10 0 0]); Reva = diag([5 5]); %test3
+% Qeva = diag([10 10 0 0]); Reva = diag([5 5]); %test3
+
+% Qeva = diag([10 10 0 0]); Reva = diag([.1 .1]);
 
 qrTrue=[diag(Qeva);diag(Reva)];
 
@@ -156,20 +161,41 @@ gameStateVals.H2=eye(4);
 gameStateVals.umax=umax;
 gameStateVals.A = A;
 gameStateVals.Bstack = BstackUse;
-Pvec0Pur=repmat(reshape(Qnoiseeva+Qnoisepur,[16,1]),[3 2]);
-Qvec0Pur= [[reshape(Qpur, [16 1]); reshape(Qeva, [16,1]); zeros(16,1); zeros(16,1)] [reshape(Qpur, [16 1]); reshape(Qeva, [16,1]); zeros(16,1); zeros(16,1)]];
 
-tvec0pPur=[0 tplan]; tvec0pEva=[0 tplan];
+% Pvec0Pur=repmat(reshape(Qnoiseeva+Qnoisepur,[16,1]),[3 2]);
+% Qvec0Pur= [[reshape(Qpur, [16 1]); reshape(Qeva, [16,1]); zeros(16,1); zeros(16,1)] [reshape(Qpur, [16 1]); reshape(Qeva, [16,1]); zeros(16,1); zeros(16,1)]];
+% tvec0pPur=[0 tplan]; tvec0pEva=[0 tplan];
+% tvec0qPur=[tplan 0]; tvec0qEva=[tplan 0];
+% if usesKumar
+% for ik=1:3 %fwd/bwd pass three times
+%     propagateP_Pur=@(t,x) odeKumarP(t,x,Qvec0Pur,tvec0qPur,gameStateVals);
+%     [tvec0pPur,Pvec0Pur]=ode45(propagateP_Pur,[0 tplan],Pvec0Pur(:,1));
+%     Pvec0Pur=Pvec0Pur';
+%     
+%     propagateQ_Pur=@(t,x) odeKumarQ(t,x,Pvec0Pur,tvec0pPur,gameStateVals);
+%     [tvec0qPur,Qvec0Pur]=ode45(propagateQ_Pur,[tplan 0],Qvec0Pur(:,1));
+%     Qvec0Pur=Qvec0Pur';
+%     %NOTE: CHECK THAT OUTPUTS ARE IN THE RIGHT TIME SERIES ORDER
+% end
+% end
+
+P1test = @(t,x) odeKumarP1(t,x,gameStateVals);
+[t1,p1]=ode45(P1test,[0 tplan],reshape(Qnoiseeva+Qnoisepur,[16,1]));
+p1 = p1';
+nt1 = length(t1);
+Pvec0Pur = [p1;repmat(reshape(Qnoiseeva+Qnoisepur,[16,1]), [2 nt1])];
+Qvec0Pur= [[reshape(Qpur, [16 1]); reshape(Qeva, [16,1]); zeros(16,1); zeros(16,1)] [reshape(Qpur, [16 1]); reshape(Qeva, [16,1]); zeros(16,1); zeros(16,1)]];
+tvec0pPur=t1; tvec0pEva=[0 tplan];
 tvec0qPur=[tplan 0]; tvec0qEva=[tplan 0];
 if usesKumar
-for ik=1:3 %fwd/bwd pass three times
-    propagateP_Pur=@(t,x) odeKumarP(t,x,Qvec0Pur,tvec0qPur,gameStateVals);
-    [tvec0pPur,Pvec0Pur]=ode45(propagateP_Pur,[0 tplan],Pvec0Pur(:,1));
-    Pvec0Pur=Pvec0Pur';
-    
+for ik=1:3 %fwd/bwd pass three times    
     propagateQ_Pur=@(t,x) odeKumarQ(t,x,Pvec0Pur,tvec0pPur,gameStateVals);
     [tvec0qPur,Qvec0Pur]=ode45(propagateQ_Pur,[tplan 0],Qvec0Pur(:,1));
     Qvec0Pur=Qvec0Pur';
+    
+    propagateP_Pur=@(t,x) odeKumarP(t,x,Qvec0Pur,tvec0qPur,gameStateVals);
+    [tvec0pPur,Pvec0Pur]=ode45(propagateP_Pur,[0 tplan],Pvec0Pur(:,1));
+    Pvec0Pur=Pvec0Pur';
     %NOTE: CHECK THAT OUTPUTS ARE IN THE RIGHT TIME SERIES ORDER
 end
 end

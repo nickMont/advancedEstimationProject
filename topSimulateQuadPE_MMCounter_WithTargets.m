@@ -335,7 +335,7 @@ for t=t0:dt:tmax
         Paug=PhatE(:,:,ij); Qk=RuMMF;
         if min(eig(Paug))>0 %check for impossible models
             % Propagate
-            [xhatEp1,Pp1]=ukfPropagate(xhatE(:,ij),PhatE(:,:,ij),uEvaMMF,RuMMF,dt,f_dynEvaQuad);
+            [xhatEp1,Pp1]=ukfPropagate(xhatE(:,ij),PhatE(:,:,ij),uEvaMMF,RuMMF,dt,'f_dynEvaQuad');
             
             % Measure
             [xhatE(:,ij),PhatE(:,:,ij),nu,Sk,Wk]=kfMeasure(xhatEp1,Pp1,zMeas,eye(length(ewxvEva)),Rk);

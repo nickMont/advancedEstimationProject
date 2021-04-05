@@ -1,7 +1,7 @@
 clear;clc;loadenv;
 
 L = 0.5; %capture range
-phi = -0.75*pi; %final capture angle
+phi = -pi; %final capture angle
 mu = 0.75; %speed ratio, vmaxE/vmaxP
 %xBphi = (2*sin(phi)+2*mu*(pi-phi)-L)*sin(phi);
 %yBphi = -(2*sin(phi)+2*mu*(pi-phi)-L)*cos(phi);
@@ -38,17 +38,17 @@ tHist = flip(Tmax-tOut);
 lambdaM = sqrt(lambdaX.^2+lambdaY.^2);
 Psi = atan2(-lambdaX./lambdaM,-lambdaY./lambdaM);
 % Psi = unwrap(Psi);
-figure(2);clf;
-subplot(2,1,1)
-plot(tHist,Psi)
-title('Evader control')
+% figure(2);clf;
+% subplot(2,1,1)
+% plot(tHist,Psi)
+% title('Evader control')
 
 S = lambdaY.*xHist - lambdaX.*yHist;
 uS = sign(S);
-figure(2);subplot(2,1,2)
-plot(tHist,uS)
-axis([0 Tmax -1.1 1.1])
-title('Pursuer control')
+% figure(2);subplot(2,1,2)
+% plot(tHist,uS)
+% axis([0 Tmax -1.1 1.1])
+% title('Pursuer control')
 
 params2.mu = mu;
 params2.PsiMat = [tHist Psi];
@@ -125,7 +125,7 @@ n=0;
 
 % 
 % get multi-transition form
-transitionMax = 12;
+transitionMax = 10;
 setMax = de2bi(1:2^transitionMax);
 setMax = 2*setMax-1;
 [a,~]=size(setMax);

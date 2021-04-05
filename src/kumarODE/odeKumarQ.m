@@ -45,7 +45,7 @@ P3=reshape(P3f,[nX,nX]);
 
 % % % The ODEs themselves
 %(21)
-Q1dot = -Q1*F-F'*Q1+Q1*G1*invR1*G1'*Q1-Q1*G2*inv(R22)*G2'*Q2+H2'*invV2*H2*P2*Q3'-H2'*invV2*H2*P2*Q4;
+Q1dot = -Q1*F-F'*Q1+Q1*G1*invR1*G1'*Q1-Q1*G2*invR2*G2'*Q2+H2'*invV2*H2*P2*Q3'-H2'*invV2*H2*P2*Q4;
 %(22)
 Q2dot = -Q2*F-F'*Q2-Q2*G2*invR2*G2'*Q2+Q2*G1*invR1*G1'*Q1+Q1'*G1*invR1*G1'*Q2-Q1'*G1*invR1*R21*invR1*G1'*Q1;
 %(18)
