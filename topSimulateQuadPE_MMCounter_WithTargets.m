@@ -118,6 +118,7 @@ mu=1/(nmod*numTargets)*ones(nmod*numTargets,1);
 muHist=mu;
 Rk=0.1*eye(length(ewxvEva));
 
+
 tic
 for t=t0:dt:tmax
     n=n+1;

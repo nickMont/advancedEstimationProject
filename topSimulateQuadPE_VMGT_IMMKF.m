@@ -20,7 +20,7 @@ meanBestResponseType='mean_output'; %mean_omega, mean_output
 
 % General control type flags
 uPurType='vm'; %vm OR gt (type of gt specified as controlType)
-uEvaType='vm'; 
+uEvaType='vm';
 Spur.controlType='gt_overx'; %vmquad, gt_overx
 Seva.controlType='gt_overx';
 flagRunMMKF=false;
@@ -44,6 +44,8 @@ uLmax=8; %max low-level control
 dt=0.1;
 t0=0;
 tmax=5;
+
+nt=length(t0:dt:tmax)+1;
 
 % Evader control type (truth parameter)
 evaControlType=1*ones(length(0:dt:tmax),1);
@@ -136,7 +138,7 @@ for t=t0:dt:tmax
     Seva.Jparams.Ropp=zeros(4,4);
     Seva.uLmax=uLmax;
     
-    if strcmp(uEvaType,'gt')||strcmp(uPurType,'gt')
+    if strcmp(uEvaType(n),'gt')||strcmp(uPurType,'gt')
         
         % Robust estimation params
         miscParams.Qk=0.001*eye(24);

@@ -1,7 +1,7 @@
 clear;clc;loadenv;
 
 L = 0.5; %capture range
-phi = -pi; %final capture angle
+phi = 3*pi/8; %final capture angle
 mu = 0.75; %speed ratio, vmaxE/vmaxP
 %xBphi = (2*sin(phi)+2*mu*(pi-phi)-L)*sin(phi);
 %yBphi = -(2*sin(phi)+2*mu*(pi-phi)-L)*cos(phi);
@@ -123,9 +123,9 @@ n=0;
 %     end
 % end
 
-% 
+
 % get multi-transition form
-transitionMax = 10;
+transitionMax = 16;
 setMax = de2bi(1:2^transitionMax);
 setMax = 2*setMax-1;
 [a,~]=size(setMax);
@@ -138,10 +138,29 @@ for ij=1:a
 end
 
 
+% % Singular transition form
+% dt1 = 0.01;
+% tMax3 = 2*pi+0.01;
+% tMaxPos = tMax3;
+% timeSet = dt1:dt1:tMax3;
+% uPSet{1,1}=[-1e-6 1
+%     1e6 0];
+% uPSet{2,1}=[-1e-6 -1
+%     1e6 0];
+% for ij=1:length(timeSet)
+%     uPSet{2*ij} = [-1e-6 0
+%         0 1
+%         timeSet(ij) -1];
+%     uPSet{2*ij+1} = [-1e-6 0
+%         0 -1
+%         timeSet(ij) 1];
+% end
+
+
 nuF=max(size(uPSet));
 
 % generate Psi set from linear form
-dM=pi/2;
+dM=pi/8;
 dB=dM;
 mSet = -pi/2:dM:pi/2;
 bSet = -pi:dB:pi;

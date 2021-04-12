@@ -59,7 +59,6 @@ if generateUsingUT
     uE=uE0;
     [nP,nE]=size(Cpur);
 elseif ~generateUsingUT
-    Seva.Jparams
     [Cpur,Ceva,uP,uE]=generateCostMatricesVMquad(Spur,Seva,gameState);
     [nP,nE]=size(Cpur);
 end

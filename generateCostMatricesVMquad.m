@@ -35,7 +35,7 @@ nmodE = length(Seva.uMat);
 Jpur=9001*ones(nmodP,nmodE);
 Jeva=42*ones(nmodP,nmodE);
 
-nx = length(gameState.xPur);
+nx = length(gameState.xPur); %#ok<*NASGU>
 % state = zeros(nx,gameState.kMax+1);
 xPurCell = cell(nmodP,nmodE);
 xEvaCell = cell(nmodP,nmodE);
@@ -49,8 +49,6 @@ end
 %For all controllers, player dynamics is independent for k=1.  Process
 % the pursuer and the evader independently, then merge the loop for k>1
 % for efficiency.
-
-Seva.Jparams
 
 if isfield(gameState,'Rtarget')
     %load prediction params for P
@@ -125,7 +123,7 @@ for ij=1:nmodP
     else
         stateP(:,2) = feval(Spur.fname,stateP(:,1),uP,gameState.dt,zeros(6,1));
     end
-    uPm=[uPm uP];
+    uPm=[uPm uP]; %#ok<*AGROW>
     for iL=1:nmodE
         uPcell{ij,iL} = uPm;
         xPurCell{ij,iL} = stateP;

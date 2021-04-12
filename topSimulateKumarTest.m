@@ -21,7 +21,7 @@ plotEndFlag=0;
 npart=500;
 
 %Evader control type info
-evaderUsesGT=0;
+evaderUsesGT=1;
 evaderUsesKumar=~evaderUsesGT;
 
 %Pursuer control type info
@@ -37,7 +37,7 @@ gameStateVals.tryLinearPropagation = false;
 cd = 0.01; %drag coefficient, always positive
 
 % Time info
-tstep = 0.01;
+tstep = 1;
 tmax = 10;
 dt = tstep;
 tplan = tmax;
@@ -188,7 +188,7 @@ Qvec0Pur= [[reshape(Qpur, [16 1]); reshape(Qeva, [16,1]); zeros(16,1); zeros(16,
 tvec0pPur=t1; tvec0pEva=[0 tplan];
 tvec0qPur=[tplan 0]; tvec0qEva=[tplan 0];
 if usesKumar
-for ik=1:3 %fwd/bwd pass three times    
+for ik=1:5 %fwd/bwd pass three times    
     propagateQ_Pur=@(t,x) odeKumarQ(t,x,Pvec0Pur,tvec0pPur,gameStateVals);
     [tvec0qPur,Qvec0Pur]=ode45(propagateQ_Pur,[tplan 0],Qvec0Pur(:,1));
     Qvec0Pur=Qvec0Pur';
