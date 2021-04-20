@@ -43,20 +43,20 @@ Psi = atan2(-lambdaX./lambdaM,-lambdaY./lambdaM);
 % plot(tHist,Psi)
 % title('Evader control')
 
-S = lambdaY.*xHist - lambdaX.*yHist;
-uS = sign(S);
+% S = lambdaY.*xHist - lambdaX.*yHist;
+% uS = sign(S);
 % figure(2);subplot(2,1,2)
 % plot(tHist,uS)
 % axis([0 Tmax -1.1 1.1])
 % title('Pursuer control')
 
-params2.mu = mu;
-params2.PsiMat = [tHist Psi];
-params2.PsiMat = polyfit(tHist,Psi,1);
-params2.PsiType = 'linear';
-params2.uPMat = [tHist uS;1000 uS(end)];
-foh=@(t,x) homicidalChauffeurForwardFOH(t,x,params2);
-[a,b]=ode45(foh,[0 Tmax],x0);
+% params2.mu = mu;
+% params2.PsiMat = [tHist Psi];
+% params2.PsiMat = polyfit(tHist,Psi,1);
+% params2.PsiType = 'linear';
+% params2.uPMat = [tHist uS;1000 uS(end)];
+% foh=@(t,x) homicidalChauffeurForwardFOH(t,x,params2);
+% [a,b]=ode45(foh,[0 Tmax],x0);
 % figure(4);clf;
 % plot(b(:,1),b(:,2))
 
@@ -125,7 +125,7 @@ n=0;
 
 
 % get multi-transition form
-transitionMax = 16;
+transitionMax = 17;
 setMax = de2bi(1:2^transitionMax);
 setMax = 2*setMax-1;
 [a,~]=size(setMax);

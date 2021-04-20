@@ -21,7 +21,7 @@ plotEndFlag=0;
 npart=500;
 
 %Evader control type info
-evaderUsesGT=1;
+evaderUsesGT=0;
 evaderUsesKumar=~evaderUsesGT;
 
 %Pursuer control type info
@@ -37,7 +37,7 @@ gameStateVals.tryLinearPropagation = false;
 cd = 0.01; %drag coefficient, always positive
 
 % Time info
-tstep = 1;
+tstep = 0.5;
 tmax = 10;
 dt = tstep;
 tplan = tmax;
@@ -75,7 +75,7 @@ xTrue=[1 1 0 0]'; %test1
 % xTrue=[1 0.5 0 0]'; %test2,3
 
 Qpur = diag([10 10 10 10]); Rpur = diag([10 10]);
-Qeva = diag([10 10 0 0]); Reva = diag([50 50]); %test1
+Qeva = diag([10 10 0 0]); Reva = diag([35 35]); %test1
 % Qeva = diag([10 10 0 0]); Reva = diag([20 20]); %test2
 % Qeva = diag([10 10 0 0]); Reva = diag([5 5]); %test3
 
