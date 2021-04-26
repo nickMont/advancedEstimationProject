@@ -21,7 +21,7 @@ plotEndFlag=0;
 npart=500;
 
 %Evader control type info
-evaderUsesGT=0;
+evaderUsesGT=1;
 evaderUsesKumar=~evaderUsesGT;
 
 %Pursuer control type info
@@ -45,7 +45,7 @@ kmax = floor(tplan/tstep);
 kmax = 1;
 
 % Control info
-umax=1;
+umax=5;
 
 %utemp=permn(-2:.5:2,2)';
 % rSet = -(0:0.2:1);
