@@ -125,7 +125,7 @@ n=0;
 
 
 % get multi-transition form
-transitionMax = 17;
+transitionMax = 14;
 setMax = de2bi(1:2^transitionMax);
 setMax = 2*setMax-1;
 [a,~]=size(setMax);

@@ -292,19 +292,26 @@ for t=t0:dt:tmax
     for iT=1:numTargets
         targetLocation=targetLocationVec{iT};
         for ij=1:nmod
-            if strcmp(uEvaTypeStack{(iT-1)*nmod+ij,1},'nash')
-                u2=uPurTrue;
-            elseif strcmp(uEvaTypeStack{(iT-1)*nmod+ij,1},'minimax')
-                u2=Sminimax.uP;
-            else
-                SInput.Spur=Spur; SInput.Seva=Seva;
-                SInput.Seva.uMat={}; SInput.Seva.uMat{1}=uEvaTempStack{(iT-1)*nmod+ij,1}; SInput.Seva.controlType='gt_overu';
-                SInput.utemp=utempFine; SInput.uvec=uvecFine; SInput.umax=umax;
-                SInput.gameState=gameState;
-                gameState.Rtarget.x_target=targetLocation;
-                SInput.player='pur'; SInput.type='discretize';
-                u2=optimizeGivenEnemyControl(SInput);
-            end
+            %             if strcmp(uEvaTypeStack{(iT-1)*nmod+ij,1},'nash')
+            %                 u2=uPurTrue;
+            %             elseif strcmp(uEvaTypeStack{(iT-1)*nmod+ij,1},'minimax')
+            %                 u2=Sminimax.uP;
+            %             else
+            %                 SInput.Spur=Spur; SInput.Seva=Seva;
+            %                 SInput.Seva.uMat={}; SInput.Seva.uMat{1}=uEvaTempStack{(iT-1)*nmod+ij,1}; SInput.Seva.controlType='gt_overu';
+            %                 SInput.utemp=utempFine; SInput.uvec=uvecFine; SInput.umax=umax;
+            %                 SInput.gameState=gameState;
+            %                 gameState.Rtarget.x_target=targetLocation;
+            %                 SInput.player='pur'; SInput.type='discretize';
+            %                 u2=optimizeGivenEnemyControl(SInput);
+            %             end
+            SInput.Spur=Spur; SInput.Seva=Seva;
+            SInput.Seva.uMat={}; SInput.Seva.uMat{1}=uEvaTempStack{(iT-1)*nmod+ij,1}; SInput.Seva.controlType='gt_overu';
+            SInput.utemp=utempFine; SInput.uvec=uvecFine; SInput.umax=umax;
+            SInput.gameState=gameState;
+            gameState.Rtarget.x_target=targetLocation;
+            SInput.player='pur'; SInput.type='discretize';
+            u2=optimizeGivenEnemyControl(SInput);
             uPurBestResponseStack{(iT-1)*nmod+ij,1}=u2;
         end
     end
