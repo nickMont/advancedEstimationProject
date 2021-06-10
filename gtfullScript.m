@@ -20,15 +20,15 @@ end
 SpurTilde.UseVelMatch=true;
 SevaTilde.controlType='gt_overx';
 for ik=1:length(utemp)
-    SevaTilde.uMat{ik}=upmax*utemp(:,ik);
+    SevaTilde.uMat{ik}=uemax*utemp(:,ik);
 end
 %SevaTilde.Jname='J_evaQuad';
 %SevaTilde.fname='f_dynEvaQuad';
 SevaTilde.UseVelMatch=true;
-[up,ue,flag,uPSampled,uESampled,Sminimax,Smisc]=f_dyn2(SpurTilde,SevaTilde,gameStateTilde,zeros(4,1));
+[upT,ueT,flagT,uPSampledT,uESampledT,SminimaxT,SmiscT]=f_dyn2(SpurTilde,SevaTilde,gameStateTilde,zeros(4,1));
 
-uPurGT=uPSampled;
-uEvaGT=uESampled;
+uPurGT=uPSampledT;
+uEvaGT=uESampledT;
 
 % gameStateTilde.xPur=xPur(1:12);
 % gameStateTilde.xEva=xPur(13:24);

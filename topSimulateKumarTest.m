@@ -21,7 +21,7 @@ plotEndFlag=0;
 npart=500;
 
 %Evader control type info
-evaderUsesGT=1;
+evaderUsesGT=0;
 evaderUsesKumar=~evaderUsesGT;
 
 %Pursuer control type info
@@ -37,7 +37,7 @@ gameStateVals.tryLinearPropagation = false;
 cd = 0.01; %drag coefficient, always positive
 
 % Time info
-tstep = 0.5;
+tstep = 0.25;
 tmax = 10;
 dt = tstep;
 tplan = tmax;
@@ -50,7 +50,7 @@ umax=5;
 %utemp=permn(-2:.5:2,2)';
 % rSet = -(0:0.2:1);
 % tSet = 0:0.25:0.5; %multiplied by pi in mapUtempToUvec
-rSet = (0 : 0.25 : 1);
+rSet = (0.01 : 0.25 : 1);
 tSet = (0 : 1/4 : 2); %multiplied by pi in mapUtempToUvec
 umaxP=umax;
 umaxE=umax;
@@ -71,8 +71,9 @@ Game.uType="velstep";
 Game.dt=tstep;
 
 % Initial state
-xTrue=[1 1 0 0]'; %test1
+% xTrue=[1 1 0 0]'; %test1
 % xTrue=[1 0.5 0 0]'; %test2,3
+xTrue=[5 1 0.5 0]';
 
 Qpur = diag([10 10 10 10]); Rpur = diag([10 10]);
 Qeva = diag([10 10 0 0]); Reva = diag([35 35]); %test1
@@ -375,11 +376,17 @@ figure(7);clf;
 subplot(2,1,1)
 plot(tStack,u1Vec);
 title('Pursuer control')
-axis([0 max(tStack) 0 1.1])
+axis([0 max(tStack) 0 2])
+xlabel('Time (s)')
+ylabel('Control magnitude (m/s^2)')
+figset
 subplot(2,1,2)
 plot(tStack,u2Vec);
 title('Evader control')
-axis([0 max(tStack) 0 1.1])
+axis([0 max(tStack) 0 2])
+xlabel('Time (s)')
+ylabel('Control magnitude (m/s^2)')
+figset
 
 
 % q1mat=zeros(4,4,length(Qvec0Pur));

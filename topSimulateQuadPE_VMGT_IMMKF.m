@@ -280,7 +280,7 @@ for t=t0:dt:tmax
             for ij=1:nmod
                 %NOTE: This adds attitude incorrectly but only position
                 % states matter to the controller
-                xEndStateMean=1/mu(ij)*f_dynPurQuad(xTrue(1:12),uPurBestResponseStack{ij,1},dt,zeros(2,1));
+                xEndStateMean=xEndStateMean+mu(ij)*f_dynPurQuad(xTrue(1:12),uPurBestResponseStack{ij,1},dt,zeros(2,1));
             end
         end
     end

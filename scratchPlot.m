@@ -154,4 +154,18 @@
 % figset
 % %legend('Nash strategy','Non-Nash strategy') %update per side
 
+figure(1);clf;
+figset
+plot(times,vecnorm(uPhistMeanRotor),'-k.')
+hold on
+plot(times,vecnorm(uPhistMeanOutput),'-kx')
+plot(times,vecnorm(uEhistMeanRotor),'-ko')
+plot(times,vecnorm(uEhistMeanOutput),'-k^')
+legend('uP,u-space','uP,x-space','uE,u-space','uE,x-space','location','southeast')
+xlabel('Time (s)')
+ylabel('\|u\| (rad/s)')
+title('Control magnitudes for each response algorithm')
+figset
+
+
 

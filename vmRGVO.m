@@ -15,7 +15,7 @@ n=1;
 cont=true;
 nosol=false;
 while cont
-    a=a+1;
+    a=a+0.1;
     n=n+1;
     rdot=-a*r;
     if(cross(r,rdot)==0 && dot(r,rdot)<0)

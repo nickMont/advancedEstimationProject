@@ -125,10 +125,14 @@ n=0;
 
 
 % get multi-transition form
-transitionMax = 14;
-setMax = de2bi(1:2^transitionMax);
+transitionMax = 6;
+setMax = de2bi(1:2^(transitionMax+1));
 setMax = 2*setMax-1;
-[a,~]=size(setMax);
+% Following block handles edge error (final column of 0s)
+[a,b]=size(setMax);
+setMax = setMax(:,1:b-1);
+[a,b]=size(setMax);
+% end edge handling
 tMax2 = 2*pi+0.1;
 tMaxPos = tMax2;
 tSet2 = linspace(0,tMax2,transitionMax+1);

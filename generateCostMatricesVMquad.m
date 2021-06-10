@@ -188,10 +188,10 @@ for iL=1:nmodE
         if gameState.tryNN
             stateE(:,2) = predict(gameState.NN,[stateE(:,1);uE]);
         else
-            stateE(:,2) = feval(Spur.fname,stateE(:,1),uE,gameState.dt,zeros(6,1));
+            stateE(:,2) = feval(Seva.fname,stateE(:,1),uE,gameState.dt,zeros(6,1));
         end
     else
-        stateE(:,2) = feval(Spur.fname,stateE(:,1),uE,gameState.dt,zeros(6,1));
+        stateE(:,2) = feval(Seva.fname,stateE(:,1),uE,gameState.dt,zeros(6,1));
     end
     uEm=[uEm uE];
     for ij=1:nmodP
@@ -305,11 +305,11 @@ if gameState.kMax>1
                         stateE(:,ik+1) = predict(gameState.NN,[stateE(:,ik);uE]);
                     else
                         stateP(:,ik+1) = feval(Spur.fname,stateP(:,ik),uP,gameState.dt,zeros(6,1));
-                        stateE(:,ik+1) = feval(Spur.fname,stateE(:,ik),uE,gameState.dt,zeros(6,1));
+                        stateE(:,ik+1) = feval(Seva.fname,stateE(:,ik),uE,gameState.dt,zeros(6,1));
                     end
                 else
                     stateP(:,ik+1) = feval(Spur.fname,stateP(:,ik),uP,gameState.dt,zeros(6,1));
-                    stateE(:,ik+1) = feval(Spur.fname,stateE(:,ik),uE,gameState.dt,zeros(6,1));
+                    stateE(:,ik+1) = feval(Seva.fname,stateE(:,ik),uE,gameState.dt,zeros(6,1));
                 end
                 uPm=[uPm uP];
                 uEm=[uEm uE];

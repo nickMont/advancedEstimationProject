@@ -109,6 +109,7 @@ else %unique solution found
     Smisc.uPair=[up_index;ue_index];
     Smisc.uPairMax=Smisc.uPair;
 end
-
+Smisc.Cpur = Cpur;
+Smisc.Ceva = Ceva;
 end
 

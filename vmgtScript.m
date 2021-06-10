@@ -3,42 +3,17 @@
 SevaTilde=Seva;
 SpurTilde=Spur;
 gameStateTilde=gameState;
-% gameStateTilde.Rtarget.x_target=targetLocation;
-% gameStateTilde.xPur=xPur(1:12);
-% gameStateTilde.xEva=xPur(13:24);
-% gameStateTilde.dt=dt;
-% gameStateTilde.kMax=1;
-% gameStateTilde.nu=2;
-% gameStateTilde.discType='overX';
-% gameStateTilde.uMaxP=umax;
-% SpurTilde.controlType='vmquad';
-% for ik=1:length(uvec)
-%     SpurTilde.uMat{ik}=upmax*uvec(ik);
-% end
-% %SpurTilde.Jname='J_purQuad';
-% %SpurTilde.fname='f_dynPurQuad';
-% SpurTilde.UseVelMatch=true;
-% SevaTilde.controlType='vmquad';
-% for ik=1:length(uvec)
-%     SevaTilde.uMat{ik}=upmax*uvec(ik);
-% end
-% %SevaTilde.Jname='J_evaQuad';
-% %SevaTilde.fname='f_dynEvaQuad';
-% SevaTilde.UseVelMatch=true;
-% [up,ue,flag,uPSampled,uESampled,Sminimax,Smisc]=f_dyn2(SpurTilde,SevaTilde,gameStateTilde,zeros(4,1));
-% 
-% uPurVMGT=uPSampled;
-% uEvaVMGT=uESampled;
 
+% Guessing pursuer
 gameStateTilde.xPur=xPur(1:12);
 gameStateTilde.xEva=xPur(13:24);
 gameStateTilde.dt=dt;
 gameStateTilde.kMax=1;
 gameStateTilde.nu=2;
 gameStateTilde.discType='overX';
-gameStateTilde.uMaxP=umax;
+gameStateTilde.uMaxP=upmax;
 gameStateTilde.uEvaEstForVM=uEvaEst;
-SpurTilde.uMat={0}; SevaTilde.uMat={0};
+SpurTilde.uMat={}; SevaTilde.uMat={};
     for ik=1:length(uvec)
         SpurTilde.uMat{ik}=upmax*uvec(ik);
     end
@@ -46,7 +21,7 @@ SpurTilde.Jname='J_purQuadTarget';
 SpurTilde.fname='f_dynPurQuad';
 SpurTilde.UseVelMatch=true;
     for ik=1:length(uvec)
-        SevaTilde.uMat{ik}=upmax*uvec(ik);
+        SevaTilde.uMat{ik}=uemax*uvec(ik);
     end
 SpurTilde.Jparams.Q_target=QtargetP;
 SpurTilde.Jparams.x_target=targetLocation;
@@ -61,10 +36,17 @@ gameStateTilde.Rtarget.useMotionPrediction=FLAG_tryMotionPredictionInVM2;
 gameStateTilde.Rtarget.useNoHeuristics=FLAG_tryVMGTbutBypassHeuristics;
 SevaTilde.UseVelMatch=true;
 % Propagate to next time step
-[up,ue,flag,uPSampled,uESampled,Sminimax,Smisc]=f_dyn2(SpurTilde,SevaTilde,gameStateTilde,zeros(4,1),miscParams);
+[upT,ueT,flagT,uPSampledT,uESampledT,SminimaxT,SmiscT]=f_dyn2(SpurTilde,SevaTilde,gameStateTilde,zeros(4,1),miscParams);
+% uPurTrueStr{iT}=uPSampled;
+% uEvaTrueStr{iT}=uESampled;
+% uEvaNash=uESampled;
+% dewxv=f_dynEvaQuad(xTrue(13:24),uEvaNash,dt,zeros(2,1))-gameStateTilde.xEva;
+% dx=dewxv(7:8); dx=unit_vector(dx);
+% uEvaEst=umax*dx;
+% [up,ue,flag,uPSampled,uESampled,Sminimax,Smisc]=f_dyn2(SpurTilde,SevaTilde,gameStateTilde,zeros(4,1),miscParams);
 
-uPurVMGT=uPSampled;
-uEvaVMGT=uESampled;         
+uPurVMGT=uPSampledT;
+uEvaVMGT=uESampledT;         
                 
                 
                 

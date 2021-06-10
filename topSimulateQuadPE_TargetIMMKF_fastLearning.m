@@ -12,42 +12,8 @@ rng(rngseedno);
 %  BEFORE running this; hardcoded the other way to remain backwards
 %  compatible
 
-% mean_output
-% JJp =
-%    6.4783e+03
-% JJe =
-%    4.7913e+05
-% tTotal =
-%   279.8138
-% mean_rotor
-% JJp =
-%    5.3687e+03
-% JJe =
-%    4.7941e+05
 
-% mean_output
-% JJp =
-%    1.6489e+04
-% JJe =
-%    1.5958e+06
-%    
-% mean_rotor
-% JJp =
-%    1.7537e+04
-% JJe =
-%    1.5977e+06
-
-%high control cost
-% mean_output
-% JJp =
-%    4.8287e+04
-% JJe =
-%    1.5958e+06
-% mean_rotor
-% JJp =
-%    4.9275e+04
-% JJe =
-%    1.5977e+06
+indexToRunInfo=[2 5 8];
 
 % Use best response by taking mean of rotor speeds
 flagUseMeanBestResponse=true;
@@ -258,6 +224,37 @@ for t=t0:dt:tmax
     uPurTrue=uPurTrueStr{1};
     uEvaTrue=uEvaTrueStr{evaTrueTargetIndex};
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if max(n==indexToRunInfo)==1
+        uInfoMat={};
+        uInfoMat{1}=[0;0];
+        for ii=1:4
+            uInfoMat{1+ii}=upmax*[cos(ii*pi/2);sin(ii*pi/2)];
+        end
+        miscParams.numTargets = numTargets;
+        miscParams.targetLocationVec = targetLocationVec;
+        miscParams.uvec = uvec;
+        miscParams.utemp = utemp;
+        miscParams.vmtune = vmtune;
+        miscParams.scaleVec = scaleVec;
+        uPurTrue = maxTraj(Spur,Seva,gameState,miscParams,uInfoMat,heurTypeStruc,mu);
+    end
+    
+    
+    
+    
+    
+    
+    
+    
     %preloading
     uEvaTempStack=cell(nmod,1);
     RuStack=cell(nmod,1);
@@ -340,7 +337,7 @@ for t=t0:dt:tmax
                 % states matter to the controller
 %                 muT = mu(ij)
 %                 uT = uPurBestResponseStack{ij,1}
-                xEndStateMean=mu(ij)*f_dynPurQuad(xTrue(1:12),uPurBestResponseStack{ij,1},dt,zeros(2,1));
+                xEndStateMean=xEndStateMean+mu(ij)*f_dynPurQuad(xTrue(1:12),uPurBestResponseStack{ij,1},dt,zeros(2,1));
             end
         else
             error('Unrecognized response type');
