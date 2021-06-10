@@ -51,7 +51,7 @@ rng(rngseedno);
 
 % Use best response by taking mean of rotor speeds
 flagUseMeanBestResponse=true;
-meanBestResponseType='mean_rotor'; %mean_omega, mean_output
+meanBestResponseType='mean_output'; %mean_omega, mean_output
 % General control type flags
 FLAG_useGameTheoreticController=true;
 FLAG_usePureVelMatchController=false;
@@ -340,7 +340,7 @@ for t=t0:dt:tmax
                 % states matter to the controller
 %                 muT = mu(ij)
 %                 uT = uPurBestResponseStack{ij,1}
-                xEndStateMean=mu(ij)*f_dynPurQuad(xTrue(1:12),uPurBestResponseStack{ij,1},dt,zeros(2,1));
+                xEndStateMean=xEndStateMean+mu(ij)*f_dynPurQuad(xTrue(1:12),uPurBestResponseStack{ij,1},dt,zeros(2,1));
             end
         else
             error('Unrecognized response type');
