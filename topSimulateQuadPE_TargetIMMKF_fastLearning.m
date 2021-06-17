@@ -13,10 +13,12 @@ rng(rngseedno);
 %  compatible
 
 
-indexToRunInfo=[2 5 8];
+indexToRunInfo=[2];
+infoType = 'entropy'; % entropy, distance
+% indexToRunInfo=[];
 
 % Use best response by taking mean of rotor speeds
-flagUseMeanBestResponse=true;
+flagUseMeanBestResponse=false;
 meanBestResponseType='mean_rotor'; %mean_omega, mean_output
 % General control type flags
 FLAG_useGameTheoreticController=true;
@@ -55,7 +57,7 @@ uLmax=8; %max low-level control
 
 dt=0.1;
 t0=0;
-tmax=5;
+tmax=1;
 
 % Evader control type (truth parameter)
 evaControlType=1*ones(length(0:dt:tmax),1);
@@ -245,7 +247,14 @@ for t=t0:dt:tmax
         miscParams.utemp = utemp;
         miscParams.vmtune = vmtune;
         miscParams.scaleVec = scaleVec;
-        uPurTrue = maxTraj(Spur,Seva,gameState,miscParams,uInfoMat,heurTypeStruc,mu);
+        miscParams.du = du;
+        miscParams.MMKFparams.xhatE = xhatE;
+        miscParams.MMKFparams.PhatE = PhatE;
+        miscParams.MMKFparams.Mij = Mij;
+        uPur_dx = maxTraj(Spur,Seva,gameState,miscParams,uInfoMat,heurTypeStruc,mu,infoType)
+        x2 = xTrue(1:12);
+        x2(7:8) = x2(7:8)+uPur_dx;
+        uPurTrue=quadController(xTrue(1:12),zeros(4,1),zeros(3,1),x2,1,zeros(12,1));
     end
     
     
@@ -308,19 +317,21 @@ for t=t0:dt:tmax
     
     %    uEvaTrue=uEvaTemp{evaControlType(n,1)};
     
-    % Generate best responses
-    uPurBestResponseStack=cell(nmod*numTargets,1);
-    for iT=1:numTargets
-        targetLocation=targetLocationVec{iT};
-        for ij=1:nmod
-            SInput.Spur=Spur; SInput.Seva=Seva;
-            SInput.Seva.uMat={}; SInput.Seva.uMat{1}=uEvaTempStack{(iT-1)*nmod+ij,1}; SInput.Seva.controlType='gt_overu';
-            SInput.utemp=utempFine; SInput.uvec=uvecFine; SInput.umax=upmax; %upmax specifically
-            SInput.gameState=gameState;
-            gameState.Rtarget.x_target=targetLocation;
-            SInput.player='pur'; SInput.type='discretize';
-            u2=optimizeGivenEnemyControl(SInput);
-            uPurBestResponseStack{(iT-1)*nmod+ij,1}=u2;
+    if flagUseMeanBestResponse
+        % Generate best responses
+        uPurBestResponseStack=cell(nmod*numTargets,1);
+        for iT=1:numTargets
+            targetLocation=targetLocationVec{iT};
+            for ij=1:nmod
+                SInput.Spur=Spur; SInput.Seva=Seva;
+                SInput.Seva.uMat={}; SInput.Seva.uMat{1}=uEvaTempStack{(iT-1)*nmod+ij,1}; SInput.Seva.controlType='gt_overu';
+                SInput.utemp=utempFine; SInput.uvec=uvecFine; SInput.umax=upmax; %upmax specifically
+                SInput.gameState=gameState;
+                gameState.Rtarget.x_target=targetLocation;
+                SInput.player='pur'; SInput.type='discretize';
+                u2=optimizeGivenEnemyControl(SInput);
+                uPurBestResponseStack{(iT-1)*nmod+ij,1}=u2;
+            end
         end
     end
     
@@ -342,6 +353,9 @@ for t=t0:dt:tmax
         else
             error('Unrecognized response type');
         end
+%     elseif ~flagUseMeanBestResponse
+%         x2 = xTrue(1:12);
+%         uPurTrue=quadController(xTrue(1:12),zeros(4,1),zeros(3,1),x2,1,zeros(12,1));
     end
     if flagUseMeanBestResponse && strcmp(meanBestResponseType,'mean_output')
         uPurTrue=quadController(xTrue(1:12),zeros(4,1),zeros(3,1),xEndStateMean,1,zeros(12,1));
@@ -354,7 +368,7 @@ for t=t0:dt:tmax
     xTrue(13:24)=f_dynEvaQuad(xTrue(13:24),uEvaTrue(:,1),dt,zeros(2,1));
     xD=[zeros(24,1) xTrue];
 
-    zMeas=xTrue(13:24)+chol(Rk)*rand(12,1);
+    zMeas=xTrue(13:24)+(chol(Rk))'*rand(12,1);
     
     Jpur=feval(Spur.Jname,xD(1:12,:),xD(13:24,:),uPurTrue,uEvaTrue,Spur.Jparams);
     Jeva=feval(Seva.Jname,xD(13:24,:),xD(1:12,:),uEvaTrue,uPurTrue,Seva.Jparams);
