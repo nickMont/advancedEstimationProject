@@ -1,4 +1,27 @@
 function [thist,xStore,uPhist,uEhist,JJp,JJe] = gameSimLoop(Spur,Seva,gameState,miscParams,flags)
+
+% Take normal filling of gameState/Spur/Seva/etc and add: 
+%
+%     miscParams.numTargets = numTargets;
+%     miscParams.targetLocationVec = targetLocationVec;
+%     miscParams.uvec = uvec;
+%     miscParams.utemp = utemp;
+%     miscParams.vmtune = vmtune;
+%     miscParams.scaleVec = scaleVec;
+%     miscParams.du = du;
+%     miscParams.MMKFparams.xhatE = xhatE;
+%     miscParams.MMKFparams.PhatE = PhatE;
+%     miscParams.MMKFparams.Mij = Mij;
+%     miscParams.dt=dt;
+%     miscParams.tMax=tmax;
+%     miscParams.umax=umax;
+%     flags.useGameTheoreticController = FLAG_useGameTheoreticController;
+%     flags.usePurVelMatchController = FLAG_usePureVelMatchController;
+%     miscParams.uEvaTrueTargetIndex = evaTrueTargetIndex;
+%     miscParams.Rk=Rk;
+%     [thist,xStore,uPhist,uEhist,JJp,JJe] = gameSimLoop(Spur,Seva,gameState,miscParams,flags);
+
+
 uPhist=[];
 uEhist=[];
 thist=[];
@@ -10,6 +33,7 @@ JJe=0;
 gameStateT=gameState;
 SpurT=Spur;
 SevaT=Seva;
+dt=gameState.dt;
 
 numRefinements=0;
 
@@ -17,10 +41,18 @@ numTargets=miscParams.numTargets;
 targetLocationVec=miscParams.targetLocationVec;
 
 xTrue=[gameState.xPur;gameState.xEva];
+xPur=xTrue;
+xEva=xTrue;
+umax=miscParams.umax;
 
+FLAG_useGameTheoreticController = flags.useGameTheoreticController;
+FLAG_usePureVelMatchController = flags.usePurVelMatchController;
+evaTrueTargetIndex=miscParams.uEvaTrueTargetIndex;
+
+Rk=miscParams.Rk;
 
 n=0;
-for t=0:miscParams.dt:miscParams.tMax
+for t=0:dt:miscParams.tMax
     tLoop = t
     n=n+1;
     
@@ -90,6 +122,9 @@ for t=0:miscParams.dt:miscParams.tMax
     %         fprintf('manual swap at line 150')
     %         evaTrueTargetIndex=2;
     %     end
+    
+    gameStateT.xPur=xPur(1:12);
+    gameStateT.xEva=xPur(13:24);
     
     for iT=1:numTargets
         targetLocation=targetLocationVec{iT};
@@ -324,9 +359,6 @@ for t=0:miscParams.dt:miscParams.tMax
     noise=zeros(24,1);
     xEva=xTrue+noise;
     xPur=xTrue+noise;
-    
-    gameStateT.xPur=xPur(1:12);
-    gameStateT.xEva=xPur(13:24);
     
     xStore=[xStore xTrue];
 end

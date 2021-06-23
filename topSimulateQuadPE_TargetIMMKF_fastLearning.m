@@ -15,7 +15,7 @@ rng(rngseedno);
 
 indexToRunInfo=[2];
 infoType = 'entropy'; % entropy, distance
-% indexToRunInfo=[];
+indexToRunInfo=[];
 
 % Use best response by taking mean of rotor speeds
 flagUseMeanBestResponse=false;
@@ -226,14 +226,7 @@ for t=t0:dt:tmax
     uPurTrue=uPurTrueStr{1};
     uEvaTrue=uEvaTrueStr{evaTrueTargetIndex};
     
-    
-    
-    
-    
-    
-    
-    
-    
+
     
     if max(n==indexToRunInfo)==1
         uInfoMat={};
