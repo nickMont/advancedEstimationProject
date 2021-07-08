@@ -4,8 +4,29 @@ beep off;
 %note use addpath('name') to add folders to path
 
 rngseedno=457;
-rngseedno=520;
+Rk=0.3*eye(12);
+rngseedno=521;
+Rk=0.05*eye(12);
+rngseedno=501;
+Rk=0.1*eye(12);
 rng(rngseedno);
+
+z31=zeros(3,1);
+ewxv0pur=[z31; z31; 0.25;0.01;0; z31];
+ewxv0eva=[zeros(12,1)];
+
+tSimPlanMMKF=1;
+
+purInfoControlSet={};
+upI=1;
+purInfoControlSet{1}=upI*[1;1];
+purInfoControlSet{2}=upI*[1;-1];
+purInfoControlSet{3}=upI*[-1;1];
+purInfoControlSet{4}=upI*[-1;-1];
+purInfoControlSet{5}=upI*[1;0];
+purInfoControlSet{6}=upI*[0;1];
+purInfoControlSet{7}=upI*[-1;0];
+purInfoControlSet{8}=upI*[0;-1];
 
 muVeckStack=cell(3,1);
 
@@ -29,16 +50,6 @@ elseif i3sim==3
     indexToRunInfo=[1 2 3 4];
     infoType='distance';
 end
-
-purInfoControlSet={};
-purInfoControlSet{1}=0.5*[1;1];
-purInfoControlSet{2}=0.5*[1;-1];
-purInfoControlSet{3}=0.5*[-1;1];
-purInfoControlSet{4}=0.5*[-1;-1];
-purInfoControlSet{5}=0.5*[1;0];
-purInfoControlSet{6}=0.5*[0;1];
-purInfoControlSet{7}=0.5*[-1;0];
-purInfoControlSet{8}=0.5*[0;-1];
 
 % Use best response by taking mean of rotor speeds
 flagUseMeanBestResponse=false;
@@ -99,10 +110,11 @@ uvecFine=-1:du/2:1;
 utempFine=permn(uvecFine,2)';
 utempFine=mapUtempToUvec(utempFine,"circle",utype);
 
-n=0;
-z31=zeros(3,1);
-ewxvPur=[z31; z31; 1;0.1;0; z31];
-ewxvEva=[zeros(12,1)];
+% z31=zeros(3,1);
+% ewxv0pur=[z31; z31; 1;0.1;0; z31];
+% ewxv0eva=[zeros(12,1)];
+ewxvPur=ewxv0pur;
+ewxvEva=ewxv0eva;
 xPur=[ewxvPur;ewxvEva];
 xEva=[ewxvPur;ewxvEva];
 xTrue=xPur;
@@ -114,7 +126,7 @@ targetLocationVec{2}=[5;0;0];
 QtargetP = 0*diag([1;1;0]);
 QtargetE = 10*diag([1;1;0]);
 Qpur=zeros(12,12); Qeva=zeros(12,12);
-Qpur(7:8,7:8)=50*eye(2);
+Qpur(7:8,7:8)=10*eye(2);
 Qeva(7:8,7:8)=5*eye(2);
 Rpur=eye(4);
 Reva=eye(4);
@@ -130,7 +142,7 @@ xhatE=repmat(ewxvEva,[1 nmod*numTargets]);
 PhatE=repmat(0.001*eye(length(ewxvEva)),[1 1 nmod*numTargets]);
 mu=1/(nmod*numTargets)*ones(nmod*numTargets,1);
 muHist=mu;
-Rk=0.2*eye(length(ewxvEva));
+% Rk=0.3*eye(length(ewxvEva));
 
 numModels=nmod*numTargets;
 Mij=eye(numModels)+0.01*ones(numModels);
@@ -143,6 +155,7 @@ if aMij~=nmod*numTargets || bMij~=nmod*numTargets
 end
 
 tic
+n=0;
 for t=t0:dt:tmax
     tLoop = t
     n=n+1;
@@ -259,11 +272,7 @@ for t=t0:dt:tmax
     
     
     if max(n==indexToRunInfo)==1
-        uInfoMat={};
-        uInfoMat{1}=[0;0];
-        for ii=1:4
-            uInfoMat{1+ii}=upmax*[cos(ii*pi/2);sin(ii*pi/2)];
-        end
+        uInfoMat = purInfoControlSet;
         miscParams.numTargets = numTargets;
         miscParams.targetLocationVec = targetLocationVec;
         miscParams.uvec = uvec;
@@ -276,7 +285,7 @@ for t=t0:dt:tmax
         miscParams.MMKFparams.Mij = Mij;
         SpurT=Spur;
         SpurT.uMat=purInfoControlSet;
-        uPur_dx = maxTraj(SpurT,Seva,gameState,miscParams,uInfoMat,heurTypeStruc,mu,infoType)
+        uPur_dx = maxTraj(SpurT,Seva,gameState,miscParams,uInfoMat,heurTypeStruc,mu,infoType,tSimPlanMMKF)
         x2 = xTrue(1:12);
         x2(7:8) = x2(7:8)+uPur_dx;
         uPurTrue=quadController(xTrue(1:12),zeros(4,1),zeros(3,1),x2,1,zeros(12,1));
@@ -549,4 +558,5 @@ outmu=[outmu tt(1,:)'];
 tt=muVeckStack{3,1};
 outmu=[outmu tt(1,:)']
 
-
+dMuEntropy = outmu(:,2)-outmu(:,1)
+dMuDistance = outmu(:,3)-outmu(:,1)
