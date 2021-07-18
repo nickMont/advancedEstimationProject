@@ -27,7 +27,9 @@ measStore=cell(1,numNNiter);
 controlTypeStore=cell(1,numNNiter);
 uStore=cell(2,numNNiter);
 if flagHasTarget==true
-    targetStore=cell(2,numNNiter);
+    targetStore=cell(1,numNNiter);
+    targetTrueIndexStore=cell(1,numNNiter);
+    targetPossibleStore=cell(1,numNNiter);
 end
 
 for ikN=1:numNNiter
@@ -84,7 +86,11 @@ Game.dt=tstep;
 %xTrue = diag([20 20 2 2 20 20 2 2])*(2*rand(8,1)-1);
 xTrue = diag([4 4 .5 .5 4 4 .5 .5])*rand(8,1);
 
-xTarget=20*(rand(2,1)-0.5);
+
+xTargetPoss{1} = 20*(rand(2,1)-0.5);
+xTargetPoss{2} = 20*(rand(2,1)-0.5);
+xTargetIndexTrue = ceil(2*rand);
+xTarget=xTargetPoss{xTargetIndexTrue};
 
 Qpur = 100*rand*diag([1 1 0 0]); Rpur = 15*rand*diag([1 1]);
 Qeva = 100*rand*diag([1 1 0 0]); Reva = 15*rand*diag([1 1]);
@@ -98,6 +104,9 @@ cdP=.1;
 cdE=.1;
 qrTrueAll=[diag(Qpur); diag(Rpur); diag(Qeva); diag(Reva);cdP;cdE];
 if flagHasTarget
+    targetStore{ikN}=xTarget;
+    targetPossibleStore=xTargetPoss;
+    targetTrueIndexStore=xTargetIndexTrue;
     qrTrueAll=[qrTrueAll; diag(QTargetPur); diag(QTargetEva); xTarget];
 end
 qrStore{ikN}=qrTrueAll;
@@ -159,6 +168,7 @@ uBp=[];
 uBe=[];
 xBt=xTrue;
 zB=[];
+
 
 for ij=0:tstep:tmax
     n=n+1;
