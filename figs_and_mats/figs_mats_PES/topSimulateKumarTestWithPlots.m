@@ -376,24 +376,45 @@ if plotEndFlag==1
     
 end
 
+u1VecKumar = vecnorm(u1StackKumar);
+u2VecKumar = vecnorm(u2StackKumar);
+
+load kumarSat5.mat
 u1Vec = vecnorm(u1Stack);
 u2Vec = vecnorm(u2Stack);
 
+
 figure(7);clf;
-subplot(2,1,1)
-plot(tStack,u1Vec);
-title('Pursuer control')
-axis([0 max(tStack) 0 5.1])
-xlabel('Time (s)')
-ylabel('Control magnitude (m/s^2)')
+s07_1=subplot(2,1,1);
+kind=1:50:length(tStackKumar);
+dind=1:50:length(tStack);
+plot(tStackKumar(kind),u1VecKumar(kind),'*k');
+hold on
+stairs(tStack(dind),u1Vec(dind),'ok')
+legend
+axis([0 max(tStack) -0.1 5.1])
+set(gca,'XTick',[])
+ylabel('Pursuer control (m/s^2)')
+legend('True solution','Discretized')
 figset
-subplot(2,1,2)
-plot(tStack,u2Vec);
-title('Evader control')
-axis([0 max(tStack) 0 1])
+s07_2=subplot(2,1,2);
+plot(tStackKumar(kind),u2VecKumar(kind),'*k');
+hold on
+plot(tStack(dind),u2Vec(dind),'ok')
+axis([0 max(tStack) -0.1 1])
 xlabel('Time (s)')
-ylabel('Control magnitude (m/s^2)')
+ylabel('Evader control (m/s^2)')
+legend('True solution','Discretized')
 figset
+
+figure(7);
+nh=.41;
+p1 = get(s07_1,'Position')
+p2 = get(s07_2,'Position')
+p1t=p1; p1t(4) = nh;
+set(s07_1,'Position',p1t)
+p2t=p2; p2t(4) = nh; p2t(2)=.15;
+set(s07_2,'Position',p2t)
 
 
 % q1mat=zeros(4,4,length(Qvec0Pur));
