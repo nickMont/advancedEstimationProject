@@ -11,6 +11,15 @@ L = 0.5; %capture range
 phi = 3*pi/8; %final capture angle
 mu = 0.1; %speed ratio, vmaxE/vmaxP
 
+% %P control type
+controlTypeP = 'disc'; %'disc','true'
+% controlTypeP = 'true'; %'disc','true'
+
+% %E control type
+controlTypeE = 'disc'; %'disc','true'
+% controlTypeE = 'true'; %'disc','true'
+
+
 
 %xBphi = (2*sin(phi)+2*mu*(pi-phi)-L)*sin(phi);
 %yBphi = -(2*sin(phi)+2*mu*(pi-phi)-L)*cos(phi);
@@ -46,6 +55,8 @@ tHist = flip(Tmax-tOut);
 
 lambdaM = sqrt(lambdaX.^2+lambdaY.^2);
 Psi = atan2(-lambdaX./lambdaM,-lambdaY./lambdaM);
+PsiTrueMat = polyfit(tHist,Psi,1);
+lambdaTrueMat = [tHist lambdaM];
 % Psi = unwrap(Psi);
 % figure(2);clf;
 % subplot(2,1,1)
@@ -273,7 +284,7 @@ while stopcond==false
     % E set
     dM=pi/8;
     dB=dM;
-    mSet = -pi/4:dM:pi/4;
+    mSet = -pi/2:dM:pi/2;
     bSet = -pi:dB:pi;
     qSet = -0.1:0.05:0.01;
     PsiComb = allcomb(mSet,bSet);
@@ -291,6 +302,7 @@ while stopcond==false
     % fill optimizer mats
     Spur.uMat = uPSet;
     Seva.uMat = PsiSet;
+    
     gameState.params.uEType = 'linear';
     gameState.params.mu=mu;
     gameState.t0=tInternal;
@@ -299,14 +311,35 @@ while stopcond==false
     gameState.params.L=L;
     
     %run optimizer
-    [temp,~,temp2,~,culledset] = generateCostMatricesHC_closedloop(Spur,Seva,gameState,[]);
-    minAll=minimax1(temp);
-    [cullP,cullE]=size(temp2);
-    minCull=minimax1(temp2);
+    if strcmp(controlTypeP,'disc') || strcmp(controlTypeE,'disc')
+        [temp,~,temp2,~,culledset] = generateCostMatricesHC_closedloop(Spur,Seva,gameState,[]);
+        minAll=minimax1(temp);
+        [cullP,cullE]=size(temp2);
+        minCull=minimax1(temp2);
+    end
     
     % propagate
-    uPt=Spur.uMat{minAll(1)}
-    uEt=Seva.uMat{minAll(2)}
+    if strcmp(controlTypeP,'disc')
+        uPt=Spur.uMat{minAll(1)};
+    elseif strcmp(controlTypeP,'true')
+        uPt = lambdaTrueMat;
+        uPt = [uPt; 1000 uPt(end,2)];
+    else
+        error('Unrecognized pursuer control type')
+    end
+        
+    if strcmp(controlTypeE,'disc')
+        uEt=Seva.uMat{minAll(2)};
+    elseif strcmp(controlTypeE,'true')
+        uEt=PsiTrueMat;
+    else
+        error('Unrecognized pursuer control type')
+    end
+        
+    uPrun = uPt
+    uErun = uEt
+    
+    
     hc_params.mu = gameState.params.mu;
     hc_params.PsiMat = uEt;
     hc_params.uPMat = uPt;
@@ -348,6 +381,9 @@ while stopcond==false
         stopcond=true;
     end
 end
+
+tTrue = Tmax
+tDisc = capTime
 
 figure(1);clf;
 plot(xDstore(:,1),xDstore(:,2),'b')

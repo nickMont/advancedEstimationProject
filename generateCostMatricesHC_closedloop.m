@@ -68,6 +68,7 @@ for iP=1:nmodP
             thisJ = captureBonus+capTime;
         else
             thisJ = l2(end)+bDot(1)+bDot(2);
+            thisJ = sqrt(l2(end));
             thisJ = l2(end);
         end
 %         thisJ=-thisJ;
