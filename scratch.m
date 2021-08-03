@@ -60,67 +60,67 @@
 % muHist=[muHist mu];
 
 
-% testing different expm calcs
-tstep=1;
-tmax=4;
-dt = tstep;
-
-xTrue=randn(4,1);
-Gcontinuous1=[0 0
-              0 0
-              1 0
-              0 1];
-Gcontinuous2=[0 0
-              0 0
-              1 0
-              0 1];          
-Fcontinuous=[0 0 1 0
-             0 0 0 1
-             0 0 0 0
-             0 0 0 0];
-nx = length(Fcontinuous);
-
-u1=randn(2,1)
-u2=randn(2,1)
-
-%calculate state transition matrix here
-A=expm(Fcontinuous*dt);
-%Note: B,u continuous over time step, so zero-state response is just
-%  the (integral of the state transition matrix)*B*u
-B1 = (expm(Fcontinuous*dt)-eye(4))*inv(Fcontinuous)*Gcontinuous1;
-B2 = (expm(Fcontinuous*dt)-eye(4))*inv(Fcontinuous)*Gcontinuous2;
-Gstack = [Gcontinuous1 -Gcontinuous2];
-Bstack = (expm(Fcontinuous*dt)-eye(4))*(Fcontinuous\Gstack);
-% Bstack2 = A*(-A*inv(Fcontinuous
-
-z2 = zeros(2,2);
-
-[V,J]= jordan(Fcontinuous);
-BB = J(1:2,1:2);
-CC = J(3:4,3:4);
-int_eTBdt  = dt*eye(2);
-Bstack2 = inv(V) * [int_eTBdt z2; z2 inv(CC)*(expm(CC*dt)-eye(2))] * V;
-
-gameStateVals.F=Fcontinuous;
-gameStateVals.G1=Gcontinuous1;
-gameStateVals.G2=Gcontinuous2;
-
-paramsSim = gameStateVals;
-paramsSim.u1 = u1;
-paramsSim.u2 = u2;
-os = @(t,x) fdyn_kumarSamp(t,x,paramsSim);
-[t2,x2]=ode45(os,[0 0+tstep],xTrue);
-
-Bstack3 = [dt^2/2 0 -dt^2/2 0
-    0 dt^2/2 0 -dt^2/2
-    dt 0 -dt 0
-    0 dt 0 -dt];
-    
-xEndC = x2(end,:)'
-xEndD = A*xTrue + B1*u1 - B2*u2;
-xEndDstack = A*xTrue + Bstack*[u1;u2];
-xEndDstack2 = A*xTrue + Bstack2*[u1;u2];
-xEndDstack3 = A*xTrue + Bstack3*[u1;u2]
+% % testing different expm calcs
+% tstep=1;
+% tmax=4;
+% dt = tstep;
+% 
+% xTrue=randn(4,1);
+% Gcontinuous1=[0 0
+%               0 0
+%               1 0
+%               0 1];
+% Gcontinuous2=[0 0
+%               0 0
+%               1 0
+%               0 1];          
+% Fcontinuous=[0 0 1 0
+%              0 0 0 1
+%              0 0 0 0
+%              0 0 0 0];
+% nx = length(Fcontinuous);
+% 
+% u1=randn(2,1)
+% u2=randn(2,1)
+% 
+% %calculate state transition matrix here
+% A=expm(Fcontinuous*dt);
+% %Note: B,u continuous over time step, so zero-state response is just
+% %  the (integral of the state transition matrix)*B*u
+% B1 = (expm(Fcontinuous*dt)-eye(4))*inv(Fcontinuous)*Gcontinuous1;
+% B2 = (expm(Fcontinuous*dt)-eye(4))*inv(Fcontinuous)*Gcontinuous2;
+% Gstack = [Gcontinuous1 -Gcontinuous2];
+% Bstack = (expm(Fcontinuous*dt)-eye(4))*(Fcontinuous\Gstack);
+% % Bstack2 = A*(-A*inv(Fcontinuous
+% 
+% z2 = zeros(2,2);
+% 
+% [V,J]= jordan(Fcontinuous);
+% BB = J(1:2,1:2);
+% CC = J(3:4,3:4);
+% int_eTBdt  = dt*eye(2);
+% Bstack2 = inv(V) * [int_eTBdt z2; z2 inv(CC)*(expm(CC*dt)-eye(2))] * V;
+% 
+% gameStateVals.F=Fcontinuous;
+% gameStateVals.G1=Gcontinuous1;
+% gameStateVals.G2=Gcontinuous2;
+% 
+% paramsSim = gameStateVals;
+% paramsSim.u1 = u1;
+% paramsSim.u2 = u2;
+% os = @(t,x) fdyn_kumarSamp(t,x,paramsSim);
+% [t2,x2]=ode45(os,[0 0+tstep],xTrue);
+% 
+% Bstack3 = [dt^2/2 0 -dt^2/2 0
+%     0 dt^2/2 0 -dt^2/2
+%     dt 0 -dt 0
+%     0 dt 0 -dt];
+%     
+% xEndC = x2(end,:)'
+% xEndD = A*xTrue + B1*u1 - B2*u2;
+% xEndDstack = A*xTrue + Bstack*[u1;u2];
+% xEndDstack2 = A*xTrue + Bstack2*[u1;u2];
+% xEndDstack3 = A*xTrue + Bstack3*[u1;u2]
 
 
 

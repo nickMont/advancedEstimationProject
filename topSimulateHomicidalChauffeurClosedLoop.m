@@ -1,15 +1,31 @@
 clear;clc;loadenv;
 
+tic
+
 % Paper test params
 L = 0.5; %capture range
 phi = 3*pi/8; %final capture angle
 mu = 0.75; %speed ratio, vmaxE/vmaxP
 
-% sim params
-fprintf('Using different params from first paper plot set')
+% % sim params
+% fprintf('Using different params from first paper plot set')
+% L = 0.5; %capture range
+% phi = 3*pi/8; %final capture angle
+% mu = 0.2; %speed ratio, vmaxE/vmaxP
+% % Discretization parameters
+% dtSim=.5;
+% dtStep=.1;
+% transitionMax = 10;
+
+% A good sample
 L = 0.5; %capture range
 phi = 3*pi/8; %final capture angle
 mu = 0.1; %speed ratio, vmaxE/vmaxP
+% Discretization parameters
+dtSim=.5;
+dtStep=.1;
+transitionMax = 5;
+
 
 % %P control type
 controlTypeP = 'disc'; %'disc','true'
@@ -229,10 +245,6 @@ nuF=max(size(uPSet));
 % discTime=temp2(minCull(1),minCull(2))
 % trueTime=Tmax
 
-dtSim=.5;
-dtStep=.1;
-transitionMax = 5;
-
 xCurr=x0;
 
 n=0;
@@ -382,28 +394,53 @@ while stopcond==false
     end
 end
 
+t_run_total=toc
+
 tTrue = Tmax
 tDisc = capTime
 
 figure(1);clf;
+figset
 plot(xDstore(:,1),xDstore(:,2),'b')
 hold on
 plot(stateOut(:,1),stateOut(:,2),'r')
 title('XY')
+figset
 
 figure(2);clf;
+figset
 plot(tDstore,xDstore(:,1),'b')
 hold on
 plot(tOut,stateOut(length(tOut):-1:1,1),'r')
 title('t,X')
+figset
 
 figure(3);clf;
+figset
 plot(tDstore,xDstore(:,2),'b')
 hold on
 plot(tOut,stateOut(length(tOut):-1:1,2),'r')
 title('t,Y')
+figset
 
 figure(4);clf;
+figset
 stairs(uDPstore(:,1),uDPstore(:,2))
 title('uP')
+figset
+
+% figure(1);
+% hold on; plot(.5*cos(0:.1:2*pi+.1),.5*sin(0:.1:2*pi+.1))
+% legend('Discretized','True','Location','Southwest')
+% xlabel('x, rotating coordinates')
+% ylabel('y, rotating coordinates')
+
+
+
+
+
+
+
+
+
 

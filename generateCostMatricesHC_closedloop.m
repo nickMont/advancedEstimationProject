@@ -67,8 +67,11 @@ for iP=1:nmodP
         if doesCap
             thisJ = captureBonus+capTime;
         else
-            thisJ = l2(end)+bDot(1)+bDot(2);
-            thisJ = sqrt(l2(end));
+            convDist = b(end,1)/bDot(1)+b(end,2)/bDot(2);
+%             thisJ = sqrt(l2(end))+convDist;
+%             thisJ = l2(end)+convDist;
+%             thisJ = sqrt(l2(end));
+%             thisJ = convDist;
             thisJ = l2(end);
         end
 %         thisJ=-thisJ;
