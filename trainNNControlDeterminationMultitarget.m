@@ -1,22 +1,27 @@
 % clear;clc;
 
-rngseedno=41; 
+rngseedno=51; 
 rng(rngseedno);
 
 %Trains for cost-varying Q,R matrices
 
 flagSaveLabels=true;
 flagQuitWithoutTraining=false;
+flagValidateSetWithClassifier=false;
+
+targetIndexOffset = 100; %offset target index from control type index
+% This makes the switch from numerical indices to categoricals easier for
+% Matlab.
 
 %NOTE USE nnTrainSets/nnDetermineControlType/pointMassTargetPurVM_loaded
 %ONLY IF NECESSARY DUE TO OLD WIPEOFF BUG
 
 % %Input file information--base string and number of input .mat files
 file_input_string='nnTrainSets/nnDetermineControlType_X_Target/mat';
-nummats=8;
+nummats=20;
 full_nn_datfile='nnTrainSets/nnDetermineControlType_X_Target/full.mat';
 full_label_datfile='nnTrainSets/nnDetermineControlType_X_Target/fullWithLabels.mat';
-last_nontraining_iteration_frac=0.98; %fraction of data to be used for training
+last_nontraining_iteration_frac=0.95; %fraction of data to be used for training
 
 % file_input_string='nnTrainSets/temp2';
 % nummats=1;
@@ -29,7 +34,7 @@ last_nontraining_iteration_frac=0.98; %fraction of data to be used for training
 %  0=load and combine .mats
 %  1=load full datset files
 %  2=assumed already loaded
-mode=2;
+mode=1;
 
 if mode==0
     file_to_load=[file_input_string,num2str(1),'.mat'];
@@ -37,7 +42,7 @@ if mode==0
     load(file_to_load);
     indatlength=numNNiter;
     %maximumTheoreticalLength=indatlength*nummats;
-    datset=zeros(356,1,1,1);
+    datset=zeros(358,1,1,1);
     solsset=cell(1,1);
     uP=zeros(82,1);
     uE=zeros(82,1);
@@ -52,8 +57,14 @@ if mode==0
             x0t=x0t(1:8,:);
             [at,bt]=size(x0t);
             x1t=controlTypeStore{ij};
-            datset(:,1,1,nTrain)=[qrStore{1,ij};reshape(x0t,[at*bt,1])];
-            solsset{nTrain,1}=num2str(x1t);
+            qrTemp = qrStore{1,ij};
+            qrCosts = qrTemp(1:end-2);
+            xtar1 = targetPossibleStore{ij}{1};
+            xtar2 = targetPossibleStore{ij}{2};
+            datset(:,1,1,nTrain)=[qrCosts;xtar1;xtar2;reshape(x0t,[at*bt,1])];
+            controlType2String = num2str(x1t);
+            targetIndex2String = num2str(targetTrueIndexStore{ij}+targetIndexOffset);
+            solsset{nTrain,1}=[controlType2String targetIndex2String];
             uBp=uStore{1,ij};
             uBe=uStore{2,ij};
             uP(:,nTrain)=reshape(uBp,[82 1]);
@@ -105,7 +116,7 @@ data_generated = true;
 
 if ~flagQuitWithoutTraining
 network = [
-    matrixInputLayer([356 1 1],'Normalization','none')
+    matrixInputLayer([358 1 1],'Normalization','none')
     
 %     fullyConnectedLayer(18)
 %     batchNormalizationLayer
@@ -115,6 +126,10 @@ network = [
 %     batchNormalizationLayer
 %     tanhLayer
     
+    fullyConnectedLayer(200)
+    batchNormalizationLayer
+    tanhLayer 
+
     fullyConnectedLayer(100)
     batchNormalizationLayer
     tanhLayer 
@@ -158,7 +173,7 @@ network = [
     tanhLayer
     
     %dropoutLayer(0.2)
-    fullyConnectedLayer(3)
+    fullyConnectedLayer(6)
     softmaxLayer
     classificationLayer];
 
@@ -166,7 +181,7 @@ miniBatchSize  = 100;
 validationFrequency = floor(last_nontraining_iteration/miniBatchSize);
 options = trainingOptions('sgdm', ...
     'MiniBatchSize',miniBatchSize, ...
-    'MaxEpochs',20, ...
+    'MaxEpochs',80, ...
     'InitialLearnRate',0.005, ...
     'LearnRateSchedule','piecewise', ...
     'LearnRateDropFactor',0.05, ...
@@ -192,6 +207,25 @@ net = trainNetwork(data_input,data_labels,network,options);
 %dd(:,1,1,1)=10*ones(5,1)
 %predict(net,dd)
 end
+
+if flagValidateSetWithClassifier
+[~,~,~,maxDat]=size(data_validation_input);
+Pset=[];
+for iL=1:maxDat
+    tmp = classify(net,data_validation_input(:,:,:,iL));
+    Pset=[Pset; tmp];
+end
+
+PsetN=str2num(char(Pset));
+valSetN=str2num(char(data_validation_labels));
+cErr=abs(PsetN-valSetN);
+errorIndices=find(cErr~=0)
+errorControlTypeI2 = find(mod(cErr(errorIndices),1000)==0)
+errorTargetOnlyI2 = find(cErr(errorIndices<=500))
+errorBoth = errorIndices(setdiff(1:end,[errorTargetOnlyI2; errorControlTypeI2]))
+
+end
+
 
 
 
