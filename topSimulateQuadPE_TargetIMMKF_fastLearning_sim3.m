@@ -3,11 +3,13 @@ beep off;
 
 %note use addpath('name') to add folders to path
 
-rngseedno=457;
-Rk=0.3*eye(12);
-rngseedno=521;
-Rk=0.05*eye(12);
-rngseedno=501;
+%503 is fine
+
+% rngseedno=457;
+% Rk=0.3*eye(12);
+% rngseedno=521;
+% Rk=0.05*eye(12);
+rngseedno=504;
 Rk=0.1*eye(12);
 rng(rngseedno);
 
@@ -28,7 +30,12 @@ purInfoControlSet{6}=upI*[0;1];
 purInfoControlSet{7}=upI*[-1;0];
 purInfoControlSet{8}=upI*[0;-1];
 
+timeStore=[];
+
 muVeckStack=cell(3,1);
+
+% indInfo = [1 4];
+indInfo = [1 3 5];
 
 for i3sim=1:3
 
@@ -44,10 +51,10 @@ if i3sim==1
     indexToRunInfo=[];
     infoType = 'entropy'; % entropy, distance
 elseif i3sim==2
-    indexToRunInfo=[1 2 3 4];
+    indexToRunInfo=indInfo;
     infoType='entropy';
 elseif i3sim==3
-    indexToRunInfo=[1 2 3 4];
+    indexToRunInfo=indInfo;
     infoType='distance';
 end
 
@@ -472,6 +479,8 @@ for t=t0:dt:tmax
     xStore=[xStore xTrue];
 end
 tTotal=toc
+
+timeStore=[timeStore tTotal];
 
 % %     load quaddat.mat;
 % indsamp=1:5:50;

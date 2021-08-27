@@ -1,6 +1,6 @@
 % clear;clc;
 
-rngseedno=51; 
+rngseedno=51;
 rng(rngseedno);
 
 %Trains for cost-varying Q,R matrices
