@@ -1,0 +1,7 @@
+*.asv
+*.jpg*.gif
+*.pdf
+*.pptx
+*.gif
+/nnTrainSets/nnDetermineControlType_X_Target/fullWithLabels.mat
+/nnTrainSets/nnDetermineControlType_X_Target_Highvar/fullWithLabels.mat

@@ -42,7 +42,7 @@ if mode==0
     load(file_to_load);
     indatlength=numNNiter;
     %maximumTheoreticalLength=indatlength*nummats;
-    datset=zeros(358,1,1,1);
+    datset=zeros(360,1,1,1);
     solsset=cell(1,1);
     uP=zeros(82,1);
     uE=zeros(82,1);
@@ -58,7 +58,7 @@ if mode==0
             [at,bt]=size(x0t);
             x1t=controlTypeStore{ij};
             qrTemp = qrStore{1,ij};
-            qrCosts = qrTemp(1:end-2);
+            qrCosts = qrTemp(1:end);
             xtar1 = targetPossibleStore{ij}{1};
             xtar2 = targetPossibleStore{ij}{2};
             datset(:,1,1,nTrain)=[qrCosts;xtar1;xtar2;reshape(x0t,[at*bt,1])];
@@ -116,7 +116,7 @@ data_generated = true;
 
 if ~flagQuitWithoutTraining
 network = [
-    matrixInputLayer([358 1 1],'Normalization','none')
+    matrixInputLayer([360 1 1],'Normalization','none')
     
 %     fullyConnectedLayer(18)
 %     batchNormalizationLayer

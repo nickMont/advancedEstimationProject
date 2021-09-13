@@ -15,6 +15,12 @@ clear;clc;loadenv;
 % rng(rngseedno)
 numNNiter=1000;
 
+
+% offset=zeros(8,1);
+% offset=[4 4 0 0 4 4 0 0]';
+
+
+
 fdyn_trueNameP='f_dynCD2_simple';
 fdyn_trueNameE='f_dynCD2_simple';
 
@@ -85,8 +91,10 @@ Game.uType="velstep";
 Game.dt=tstep;
 
 %xTrue=[[0 0 0 0.5]'; [2 10 0 0.2]'];
-%xTrue = diag([20 20 2 2 20 20 2 2])*(2*rand(8,1)-1);
-xTrue = diag([4 4 .5 .5 4 4 .5 .5])*rand(8,1);
+xTrue = diag([20 20 .5 .5 20 20 .5 .5])*(2*rand(8,1)-1);
+% xTrue = diag([4 4 .5 .5 4 4 .5 .5])*rand(8,1);
+
+xTrue=xTrue;
 
 for ik=1:numPossibleTargets
     xTargetPoss{ik} = 20*(rand(2,1)-0.5);

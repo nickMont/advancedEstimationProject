@@ -19,10 +19,11 @@ targetIndexOffset = 100; %offset target index from control type index
 
 % %Input file information--base string and number of input .mat files
 file_input_string='nnTrainSets/nnDetermineControlType_X_Target_Highvar/mat';
-nummats=20;
+nummats=15;
 full_nn_datfile='nnTrainSets/nnDetermineControlType_X_Target_Highvar/full.mat';
 full_label_datfile='nnTrainSets/nnDetermineControlType_X_Target_Highvar/fullWithLabels.mat';
 last_nontraining_iteration_frac=0.95; %fraction of data to be used for training
+inL=362; %input layer length
 
 % file_input_string='nnTrainSets/temp2';
 % nummats=1;
@@ -43,7 +44,7 @@ if mode==0
     load(file_to_load);
     indatlength=numNNiter;
     %maximumTheoreticalLength=indatlength*nummats;
-    datset=zeros(360,1,1,1);
+    datset=zeros(inL,1,1,1);
     solsset=cell(1,1);
     uP=zeros(82,1);
     uE=zeros(82,1);
@@ -59,7 +60,7 @@ if mode==0
             [at,bt]=size(x0t);
             x1t=controlTypeStore{ij};
             qrTemp = qrStore{1,ij};
-            qrCosts = [qrTemp(1:12) qrTemp(15:end)];
+            qrCosts = [qrTemp(1:12); qrTemp(15:end)];
             xtar1 = targetPossibleStore{ij}{1};
             xtar2 = targetPossibleStore{ij}{2};
             xtar3 = targetPossibleStore{ij}{3};
@@ -119,7 +120,7 @@ data_generated = true;
 
 if ~flagQuitWithoutTraining
 network = [
-    matrixInputLayer([360 1 1],'Normalization','none')
+    matrixInputLayer([inL 1 1],'Normalization','none')
     
 %     fullyConnectedLayer(18)
 %     batchNormalizationLayer
@@ -176,7 +177,7 @@ network = [
     tanhLayer
     
     %dropoutLayer(0.2)
-    fullyConnectedLayer(6)
+    fullyConnectedLayer(12)
     softmaxLayer
     classificationLayer];
 
@@ -212,15 +213,41 @@ net = trainNetwork(data_input,data_labels,network,options);
 end
 
 if flagValidateSetWithClassifier
-[~,~,~,maxDat]=size(data_validation_input);
+    
+    nTrain=0;
+    load nnTrainSets/nnDetermineControlType_X_Target_Highvar/testSet.mat;
+    for ij=1:numNNiter
+        %currentIteration=ij
+        nTrain=nTrain+1;
+        x0t=xStore{ij};
+        x0t=x0t(1:8,:);
+        [at,bt]=size(x0t);
+        x1t=controlTypeStore{ij};
+        qrTemp = qrStore{1,ij};
+        qrCosts = [qrTemp(1:12); qrTemp(15:end)];
+        xtar1 = targetPossibleStore{ij}{1};
+        xtar2 = targetPossibleStore{ij}{2};
+        xtar3 = targetPossibleStore{ij}{3};
+        xtar4 = targetPossibleStore{ij}{4};
+        test_input(:,1,1,nTrain)=[qrCosts;xtar1;xtar2;xtar3;xtar4;reshape(x0t,[at*bt,1])];
+        controlType2String = num2str(x1t);
+        targetIndex2String = num2str(targetTrueIndexStore{ij}+targetIndexOffset);
+        test_sols{nTrain,1}=[controlType2String targetIndex2String];
+        uBp=uStore{1,ij};
+        uBe=uStore{2,ij};
+        uP(:,nTrain)=reshape(uBp,[82 1]);
+        uE(:,nTrain)=reshape(uBe,[82 1]);
+    end
+    
+[~,~,~,maxDat]=size(test_input);
 Pset=[];
 for iL=1:maxDat
-    tmp = classify(net,data_validation_input(:,:,:,iL));
+    tmp = classify(net,test_input(:,:,:,iL));
     Pset=[Pset; tmp];
 end
 
 PsetN=str2num(char(Pset));
-valSetN=str2num(char(data_validation_labels));
+valSetN=str2num(char(test_sols));
 cErr=abs(PsetN-valSetN);
 errorIndices=find(cErr~=0)
 errorControlTypeI2 = find(mod(cErr(errorIndices),1000)==0)
