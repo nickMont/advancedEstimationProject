@@ -18,10 +18,10 @@ targetIndexOffset = 100; %offset target index from control type index
 %ONLY IF NECESSARY DUE TO OLD WIPEOFF BUG
 
 % %Input file information--base string and number of input .mat files
-file_input_string='nnTrainSets/nnDetermineControlType_X_Target_Highvar/mat';
-nummats=15;
-full_nn_datfile='nnTrainSets/nnDetermineControlType_X_Target_Highvar/full.mat';
-full_label_datfile='nnTrainSets/nnDetermineControlType_X_Target_Highvar/fullWithLabels.mat';
+file_input_string='nnTrainSets/nnDetermineControlType_X_Target_Highvar/highMat';
+nummats=10;
+full_nn_datfile='nnTrainSets/nnDetermineControlType_X_Target_Highvar/fullH.mat';
+full_label_datfile='nnTrainSets/nnDetermineControlType_X_Target_Highvar/fullWithLabelsH.mat';
 last_nontraining_iteration_frac=0.95; %fraction of data to be used for training
 inL=362; %input layer length
 
@@ -122,6 +122,8 @@ if ~flagQuitWithoutTraining
 network = [
     matrixInputLayer([inL 1 1],'Normalization','none')
     
+%     convolution2dLayer([4 1],50)
+    
 %     fullyConnectedLayer(18)
 %     batchNormalizationLayer
 %     tanhLayer     
@@ -130,7 +132,11 @@ network = [
 %     batchNormalizationLayer
 %     tanhLayer
     
-    fullyConnectedLayer(200)
+    fullyConnectedLayer(250)
+    batchNormalizationLayer
+    tanhLayer
+    
+    fullyConnectedLayer(170)
     batchNormalizationLayer
     tanhLayer 
 
