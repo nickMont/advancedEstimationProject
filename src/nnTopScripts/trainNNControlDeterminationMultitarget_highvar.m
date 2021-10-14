@@ -1,7 +1,8 @@
 % clear;clc;
 loadenv;
 
-rngseedno=51;
+%rngseedno=51;
+rngseedno=55;
 rng(rngseedno);
 
 %Trains for cost-varying Q,R matrices
@@ -122,7 +123,8 @@ if ~flagQuitWithoutTraining
 network = [
     matrixInputLayer([inL 1 1],'Normalization','none')
     
-%     convolution2dLayer([4 1],50)
+    convolution2dLayer([24 1],400)
+    
     
 %     fullyConnectedLayer(18)
 %     batchNormalizationLayer
@@ -132,11 +134,19 @@ network = [
 %     batchNormalizationLayer
 %     tanhLayer
     
-    fullyConnectedLayer(250)
+    fullyConnectedLayer(350)
     batchNormalizationLayer
     tanhLayer
     
-    fullyConnectedLayer(170)
+    fullyConnectedLayer(300)
+    batchNormalizationLayer
+    tanhLayer
+    
+    fullyConnectedLayer(220)
+    batchNormalizationLayer
+    tanhLayer
+    
+    fullyConnectedLayer(150)
     batchNormalizationLayer
     tanhLayer 
 

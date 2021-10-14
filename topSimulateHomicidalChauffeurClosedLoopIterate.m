@@ -2,6 +2,28 @@ clear;clc;loadenv;
 
 tic
 
+step=0.01;
+phiSet=0:step:pi-step;
+% phiSet=0:step:pi/2;
+
+tTrueS={};
+tDiscS={};
+xHistTrueS={};
+yHistTrueS={};
+tHistTrueS={};
+psiHistTrueS={};
+lambdaHistTrueS={};
+xHistDiscS={};
+yHistDiscS={};
+tHistDiscS={};
+psiHistDiscS={};
+lambdaHistDiscS={};
+
+
+for iL=1:length(phiSet)
+    
+pcTc = (iL-1)/length(phiSet)*100
+
 % % Paper test params
 % L = 0.5; %capture range
 % phi = 3*pi/8; %final capture angle
@@ -19,12 +41,13 @@ tic
 
 % A good sample
 L = 0.5; %capture range
-phi = 3*pi/8; %final capture angle
+phi = phiSet(iL); %final capture angle
 mu = 0.1; %speed ratio, vmaxE/vmaxP
 % Discretization parameters
 dtSim=.5;
 dtStep=.1;
-transitionMax = 5;
+transitionMax = ceil(dtSim/dtStep);
+%transitionMax = 5;
 
 
 % %P control type
@@ -69,10 +92,16 @@ xHist = flip(stateOut(:,1));
 yHist = flip(stateOut(:,2));
 tHist = flip(Tmax-tOut);
 
+xHistTrueS{iL}=xHist;
+yHistTrueS{iL}=yHist;
+tHistTrueS{iL}=tHist;
+
 lambdaM = sqrt(lambdaX.^2+lambdaY.^2);
 Psi = atan2(-lambdaX./lambdaM,-lambdaY./lambdaM);
 PsiTrueMat = polyfit(tHist,Psi,1);
 lambdaTrueMat = [tHist lambdaM];
+lambdaHistTrueS{iL}=lambdaTrueMat;
+psiHistTrueS{iL}=PsiTrueMat;
 % Psi = unwrap(Psi);
 % figure(2);clf;
 % subplot(2,1,1)
@@ -253,6 +282,7 @@ tInternal=0;
 tDstore=[];
 xDstore=[];
 uDPstore=[];
+uDEstore=[];
 while stopcond==false
     n=n+1;
     
@@ -348,8 +378,8 @@ while stopcond==false
         error('Unrecognized pursuer control type')
     end
         
-    uPrun = uPt
-    uErun = uEt
+    uPrun = uPt;
+    uErun = uEt;
     
     
     hc_params.mu = gameState.params.mu;
@@ -368,6 +398,11 @@ while stopcond==false
     tadd=intersect(tlow,thigh);
     uDPstore=[uDPstore;
         uPt(tadd,:)];
+    tlow=find((uEt(:,1)>tInternal-0.01));
+    thigh=find((uEt(:,1)-.01<tInternal+dtSim-0.01));
+    tadd=intersect(tlow,thigh);
+    uDEstore=[uDEstore;
+        uEt(tadd,:)];
     
     % termination criteria
     l2 = bb(:,1).^2 + bb(:,2).^2;
@@ -399,35 +434,43 @@ t_run_total=toc
 tTrue = Tmax
 tDisc = capTime
 
-figure(1);clf;
-figset
-plot(xDstore(:,1),xDstore(:,2),'b')
-hold on
-plot(stateOut(:,1),stateOut(:,2),'r')
-title('XY')
-figset
+xHistDiscS{iL}=xDstore(:,1);
+yHistDiscS{iL}=xDstore(:,2);
+tHistDiscS{iL}=tDstore;
+tTrueS{iL}=tTrue;
+tDiscS{iL}=tDisc;
+lambdaHistDiscS{iL}=uDPstore;
+psiHistDiscS{iL}=uDEstore;
 
-figure(2);clf;
-figset
-plot(tDstore,xDstore(:,1),'b')
-hold on
-plot(tOut,stateOut(length(tOut):-1:1,1),'r')
-title('t,X')
-figset
-
-figure(3);clf;
-figset
-plot(tDstore,xDstore(:,2),'b')
-hold on
-plot(tOut,stateOut(length(tOut):-1:1,2),'r')
-title('t,Y')
-figset
-
-figure(4);clf;
-figset
-stairs(uDPstore(:,1),uDPstore(:,2))
-title('uP')
-figset
+% figure(1);clf;
+% figset
+% plot(xDstore(:,1),xDstore(:,2),'b')
+% hold on
+% plot(stateOut(:,1),stateOut(:,2),'r')
+% title('XY')
+% figset
+% 
+% figure(2);clf;
+% figset
+% plot(tDstore,xDstore(:,1),'b')
+% hold on
+% plot(tOut,stateOut(length(tOut):-1:1,1),'r')
+% title('t,X')
+% figset
+% 
+% figure(3);clf;
+% figset
+% plot(tDstore,xDstore(:,2),'b')
+% hold on
+% plot(tOut,stateOut(length(tOut):-1:1,2),'r')
+% title('t,Y')
+% figset
+% 
+% figure(4);clf;
+% figset
+% stairs(uDPstore(:,1),uDPstore(:,2))
+% title('uP')
+% figset
 
 % figure(1);
 % hold on; plot(.5*cos(0:.1:2*pi+.1),.5*sin(0:.1:2*pi+.1))
@@ -436,7 +479,7 @@ figset
 % ylabel('y, rotating coordinates')
 
 
-
+end
 
 
 
