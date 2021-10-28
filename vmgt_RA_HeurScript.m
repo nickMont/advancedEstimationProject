@@ -36,6 +36,15 @@ elseif strcmp(heurtype,'heur_only')
 else
     error('invalid argument to vmgt_RA_HeurScript');
 end
-[up,ue,flag,uPSampled,uESampled,Sminimax,Smisc]=f_dyn2(SpurTilde,SevaTilde,gameStateTilde,zeros(4,1));
+[up,ue,flag,uPSampled,uESampled,Sminimax,Smisc,Smmkf2]=f_dyn2(SpurTilde,SevaTilde,gameStateTilde,zeros(4,1));
 uPurVMGTH=uPSampled;
 uEvaVMGTH=uESampled;
+
+if exist('flagUseMeanInsteadOfLH2','var')
+    if flagUseMeanInsteadOfLH2
+        uPurVMGTH=Smmkf2.uValP;
+        uEvaVMGTH=Smmkf2.uValE;
+        Ru2InflateP=Smmkf2.RadditiveInflateP;
+        Ru2InflateE=Smmkf2.RadditiveInflateE;
+    end
+end

@@ -62,6 +62,7 @@ elseif ctrTypeR==2
 else
     controlType='gt';
 end
+numControllers=3;
 controlTypeStore{ikN}=ctrTypeR;
 
 %load nnvarDynTrained0417.mat
@@ -101,6 +102,7 @@ for ik=1:numPossibleTargets
 end
 xTargetIndexTrue = ceil(numPossibleTargets*rand);
 xTarget=xTargetPoss{xTargetIndexTrue};
+modelsBox = allcomb(1:numControll;ers,1:numPossibleTargets);
 
 Qpur = 100*rand*diag([1 1 0 0]); Rpur = 15*rand*diag([1 1]);
 Qeva = 100*rand*diag([1 1 0 0]); Reva = 15*rand*diag([1 1]);
@@ -178,6 +180,23 @@ uBp=[];
 uBe=[];
 xBt=xTrue;
 zB=[];
+
+xhatE=repmat(ewxvEva,[1 nmod]);
+PhatE=repmat(0.001*eye(length(ewxvEva)),[1 1 nmod]);
+mu=1/nmod*ones(nmod,1);
+muHist=mu;
+Rk=0.1*eye(length(ewxvEva));
+if flagRunIMMKF
+    Mij=[0.96 0.01 0.01 0.01 0.01
+        0.01 0.96 0.01 0.01 0.01
+        0.01 0.01 0.96 0.01 0.01
+        0.01 0.01 0.01 0.96 0.01
+        0.01 0.01 0.01 0.01 0.96];
+    [aMij,bMij]=size(Mij);
+    if aMij~=nmod || bMij~=nmod
+        error('Mij size does not match number of models')
+    end
+end
 
 
 for ij=0:tstep:tmax

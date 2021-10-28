@@ -25,10 +25,19 @@ end
 %SevaTilde.Jname='J_evaQuad';
 %SevaTilde.fname='f_dynEvaQuad';
 SevaTilde.UseVelMatch=true;
-[upT,ueT,flagT,uPSampledT,uESampledT,SminimaxT,SmiscT]=f_dyn2(SpurTilde,SevaTilde,gameStateTilde,zeros(4,1));
+[upT,ueT,flagT,uPSampledT,uESampledT,SminimaxT,SmiscT,Smmkf2]=f_dyn2(SpurTilde,SevaTilde,gameStateTilde,zeros(4,1));
 
 uPurGT=uPSampledT;
 uEvaGT=uESampledT;
+
+if exist('flagUseMeanInsteadOfLH2','var')
+    if flagUseMeanInsteadOfLH2
+        uPurGT=Smmkf2.uValP;
+        uEvaGT=Smmkf2.uValE;
+        Ru2InflateP=Smmkf2.RadditiveInflateP;
+        Ru2InflateE=Smmkf2.RadditiveInflateE;
+    end
+end
 
 % gameStateTilde.xPur=xPur(1:12);
 % gameStateTilde.xEva=xPur(13:24);

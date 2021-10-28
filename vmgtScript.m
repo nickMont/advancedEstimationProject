@@ -36,7 +36,7 @@ gameStateTilde.Rtarget.useMotionPrediction=FLAG_tryMotionPredictionInVM2;
 gameStateTilde.Rtarget.useNoHeuristics=FLAG_tryVMGTbutBypassHeuristics;
 SevaTilde.UseVelMatch=true;
 % Propagate to next time step
-[upT,ueT,flagT,uPSampledT,uESampledT,SminimaxT,SmiscT]=f_dyn2(SpurTilde,SevaTilde,gameStateTilde,zeros(4,1),miscParams);
+[upT,ueT,flagT,uPSampledT,uESampledT,SminimaxT,SmiscT,Smmkf2]=f_dyn2(SpurTilde,SevaTilde,gameStateTilde,zeros(4,1),miscParams);
 % uPurTrueStr{iT}=uPSampled;
 % uEvaTrueStr{iT}=uESampled;
 % uEvaNash=uESampled;
@@ -46,7 +46,19 @@ SevaTilde.UseVelMatch=true;
 % [up,ue,flag,uPSampled,uESampled,Sminimax,Smisc]=f_dyn2(SpurTilde,SevaTilde,gameStateTilde,zeros(4,1),miscParams);
 
 uPurVMGT=uPSampledT;
-uEvaVMGT=uESampledT;         
+uEvaVMGT=uESampledT;
+
+if exist('flagUseMeanInsteadOfLH2','var')
+    if flagUseMeanInsteadOfLH2
+        uPurVMGT=Smmkf2.uValP;
+        uEvaVMGT=Smmkf2.uValE;
+        Ru2InflateP=Smmkf2.RadditiveInflateP;
+        Ru2InflateE=Smmkf2.RadditiveInflateE;
+    end
+end
+
+
+
                 
                 
                 

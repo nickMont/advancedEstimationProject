@@ -20,9 +20,9 @@ targetIndexOffset = 100; %offset target index from control type index
 
 % %Input file information--base string and number of input .mat files
 file_input_string='nnTrainSets/nnDetermineControlType_X_Target_Highvar/highMat';
-nummats=10;
-full_nn_datfile='nnTrainSets/nnDetermineControlType_X_Target_Highvar/fullH.mat';
-full_label_datfile='nnTrainSets/nnDetermineControlType_X_Target_Highvar/fullWithLabelsH.mat';
+nummats=15;
+full_nn_datfile='nnTrainSets/nnDetermineControlType_X_Target_Highvar/fullH15.mat';
+full_label_datfile='nnTrainSets/nnDetermineControlType_X_Target_Highvar/fullWithLabelsH15.mat';
 last_nontraining_iteration_frac=0.95; %fraction of data to be used for training
 inL=362; %input layer length
 
@@ -123,7 +123,7 @@ if ~flagQuitWithoutTraining
 network = [
     matrixInputLayer([inL 1 1],'Normalization','none')
     
-    convolution2dLayer([24 1],400)
+    convolution2dLayer([40 1],400)
     
     
 %     fullyConnectedLayer(18)

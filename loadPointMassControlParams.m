@@ -41,5 +41,16 @@ else
     uEvaTemp=ue;
 end
 
+Ru2InflateP=zeros(4,4);
+Ru2InflateE=zeros(4,4);
+
 uEvaTemp = quadControllerACCONLY(xTrue(13:24), zeros(4,1), 3, [uEvaTemp;0],0);
+
+
+
+
+
+
+
+
 

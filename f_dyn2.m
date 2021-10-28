@@ -1,4 +1,4 @@
-function [uPur,uEva,outputflag,uValP,uValE,Sminimax,Smisc] = f_dyn2(Spur,Seva,gameState,vk,miscParams)
+function [uPur,uEva,outputflag,uValP,uValE,Sminimax,Smisc,Smmkf] = f_dyn2(Spur,Seva,gameState,vk,miscParams)
 if nargin<=3
     vk=zeros(100,1);
 end
@@ -62,11 +62,14 @@ elseif ~generateUsingUT
     [Cpur,Ceva,uP,uE]=generateCostMatricesVMquad(Spur,Seva,gameState);
     [nP,nE]=size(Cpur);
 end
+
+Smmkf=[];
     
 [indminimax,~,~]=minimax2(Cpur,Ceva);
 Sminimax.index=indminimax;
 Sminimax.uP=uP{indminimax(1),indminimax(2)};
 Sminimax.uE=uE{indminimax(1),indminimax(2)};
+Smmkf.minimax=Sminimax;
 
 %aa=LH2(-Cpur,-Ceva)
 %lhPur=aa{1}
@@ -99,6 +102,26 @@ if flag==0 %if no unique solution, run LH2 and take E(u) for result
     end
     Smisc.uPair=[sol{1};sol{2}];
     Smisc.uPairMax=[indexP;indexE];
+    [a,~]=size(uValP);
+    utp=zeros(a,1); ute=utp;
+    for ij=1:length(uPur)
+        for ik=1:length(uEva)
+            utp=utp+uPur(ij)*uEva(ik)*uP{ij};
+            ute=ute+uPur(ij)*uEva(ik)*uE{ij};
+        end
+    end
+    Smmkf.uValP=utp;
+    Smmkf.uValE=ute;
+    rtp=zeros(a,a);
+    rte=zeros(a,a);
+    for ij=1:length(uPur)
+        rtp=rtp+uPur(ij)*(utp-uP{ij})'*(utp-uP{ij});
+    end
+    for ij=1:length(uEva)
+        rte=rte+uEva(ij)*(ute-uE{ij})'*(ute-uE{ij});
+    end
+    Smmkf.RadditiveInflateP=rtp;
+    Smmkf.RadditiveInflateE=rte;
 else %unique solution found
     up_index=rdeq(1,1);
     ue_index=rdeq(2,1);
@@ -108,8 +131,14 @@ else %unique solution found
     uValE=uE{up_index,ue_index};
     Smisc.uPair=[up_index;ue_index];
     Smisc.uPairMax=Smisc.uPair;
+    Smmkf.uValP=uValP;
+    Smmkf.uValE=uValE;
+    [a,~]=size(uValP);
+    Smmkf.RadditiveInflateP=zeros(a,a);
+    Smmkf.RadditiveInflateE=zeros(a,a);
 end
 Smisc.Cpur = Cpur;
 Smisc.Ceva = Ceva;
+Smmkf.misc=Smisc;
 end
 
