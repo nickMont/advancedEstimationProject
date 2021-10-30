@@ -17,7 +17,7 @@ numNNiter=100;
 
 
 nTry=0;
-nTryMax=200;
+nTryMax=300;
 
 % offset=zeros(8,1);
 % offset=[4 4 0 0 4 4 0 0]';
