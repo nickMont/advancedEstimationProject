@@ -13,11 +13,11 @@ clear;clc;loadenv;
 
 % rngseedno=2;
 % rng(rngseedno)
-numNNiter=100;
+numNNiter=1;
 
 
 nTry=0;
-nTryMax=300;
+nTryMax=numNNiter+100;
 
 % offset=zeros(8,1);
 % offset=[4 4 0 0 4 4 0 0]';
@@ -108,7 +108,10 @@ for ik=1:numPossibleTargets
 end
 xTargetIndexTrue = ceil(numPossibleTargets*rand);
 xTarget=xTargetPoss{xTargetIndexTrue};
-modelsBox = allcomb(0:numControllers-1,1:numPossibleTargets);
+modelsBox = allcomb(0:numControllers-1,1:numPossibleTargets)
+ind01=find(modelsBox(:,1)~=2);
+ind2=find(modelsBox(:,1)==2,1); %remove redundant pure VM entries
+modelsBox=modelsBox([ind01; ind2],:)
 
 Qpur = 100*rand*diag([1 1 0 0]); Rpur = 15*rand*diag([1 1]);
 Qeva = 100*rand*diag([1 1 0 0]); Reva = 15*rand*diag([1 1]);
@@ -408,6 +411,7 @@ for in=0:tstep:tmax
             Ru=0.1*eye(2);
             %scaleS{n}(1)=uvec(tmp1);
         end
+%         uEvaThisIter=uEvaTemp;
         uEvaTempStack{ij,1}=uEvaTemp;
         RuStack{ij,1}=Ru;
     end
@@ -444,7 +448,8 @@ for in=0:tstep:tmax
     mu=muTemp/sum(muTemp);
     muHist=[muHist mu];
     
-    stateEstHist=[stateEstHist mu'.*xhatE];
+    stateEstAvg = sum(mu'.*xhatE,2);
+    stateEstHist=[stateEstHist stateEstAvg];
     
     if plotFlag==1
     figure(1)
@@ -476,6 +481,7 @@ end
 %only save iteration if filter worked
 [~,mmInd]=max(mu);
 if abs(ctrTypeR-modelsBox(mmInd,1))<=1e-5 && abs(xTargetIndexTrue-modelsBox(mmInd,2))<1e-5
+    saving = ikN
     xStore{ikN}=xBt;
     uStore{1,ikN}=uBp;
     uStore{2,ikN}=uBe;
