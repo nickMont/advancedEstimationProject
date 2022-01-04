@@ -1,5 +1,5 @@
-%note: this is written as a script rather than as a function to share
-%access to workspace variables
+%note: this is written as a script rather than as a function for historical
+% reasons
 SevaTilde=Seva;
 SpurTilde=Spur;
 gameStateTilde=gameState;

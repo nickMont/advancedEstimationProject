@@ -1,5 +1,7 @@
 %Loads simulation params for point mass model; written to use with quad
 %simulation
+%note: this is written as a script rather than as a function for historical
+% reasons
 xyd=[7,8,10,11]; %locations of xpos/ypos/xvel/yvel in 12-state
 QpurPM = Qpur(xyd,xyd); RpurPM = 1/9/2*Rpur(1:2,1:2);
 QevaPM = Qeva(xyd,xyd); RevaPM = 1/9/2*Reva(1:2,1:2);

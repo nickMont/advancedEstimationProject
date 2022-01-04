@@ -2,6 +2,7 @@ function u = vmRGVO(xP,xE,umaxP,umaxE,nX,nU)
 % http://cimlab.mie.utoronto.ca/wp-content/uploads/2018/06/Kunwar-2006-Rendezvous-guidance-trajectory-planning-for-robotic-dynamic-obstacle-avoidance-and-interception.pdf
 % xP/xE is full state of position/velocity
 % returns nan if no control is possible
+% note: approximation loop is more efficient on fast-converging states
 rP=xP(1:nX);
 rE=xE(1:nX);
 r=rE-rP;

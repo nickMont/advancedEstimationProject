@@ -1,8 +1,10 @@
 function [uEst,Ru,ummkfTypeStack] = getUForMMKF(Spur,Seva,gameState,heurTypeStrucIJ,flagUseMeanInsteadOfLH2,getPlayerType)
+% approximates control actions for different controllers chosen by MMKF
+% code is messy because of historical use of control scripts
 uEvaTemp=[];
 Ru=[];
 
-% unpacking information needed by gtFullScript
+% unpacking information needed by gtFullScript, etc
 targetLocation = gameState.Rtarget.x_target;
 xPur=[gameState.xPur; gameState.xEva]; %full state according to pursuer
 xTrue=xPur;
