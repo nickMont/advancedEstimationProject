@@ -18,7 +18,7 @@ targetIndexOffset = 100; %offset target index from control type index
 
 % %Input file information--base string and number of input .mat files
 file_input_string='nnTrainSets/nnDetermineControlType_X_Target_aLd/mat';
-nummats=15;
+nummats=25;
 full_nn_datfile='nnTrainSets/nnDetermineControlType_X_Target_aLd/full.mat';
 full_label_datfile='nnTrainSets/nnDetermineControlType_X_Target_aLd/fullWithLabels.mat';
 last_nontraining_iteration_frac=0.95; %fraction of data to be used for training
@@ -34,7 +34,7 @@ last_nontraining_iteration_frac=0.95; %fraction of data to be used for training
 %  0=load and combine .mats
 %  1=load full datset files
 %  2=assumed already loaded
-mode=0;
+mode=1;
 
 if mode==0
     file_to_load=[file_input_string,num2str(1),'.mat'];
@@ -126,35 +126,35 @@ network = [
 %     batchNormalizationLayer
 %     tanhLayer
     
-    fullyConnectedLayer(1000)
+    fullyConnectedLayer(1100)
     batchNormalizationLayer
     tanhLayer 
 
-    fullyConnectedLayer(800)
+    fullyConnectedLayer(900)
     batchNormalizationLayer
     tanhLayer 
     
-    fullyConnectedLayer(600)
+    fullyConnectedLayer(650)
     batchNormalizationLayer
     tanhLayer 
     
-    fullyConnectedLayer(400)
+    fullyConnectedLayer(450)
     batchNormalizationLayer
     tanhLayer
      
-    fullyConnectedLayer(200)
+    fullyConnectedLayer(250)
+    batchNormalizationLayer
+    tanhLayer
+    
+    fullyConnectedLayer(150)
     batchNormalizationLayer
     tanhLayer
     
     fullyConnectedLayer(100)
     batchNormalizationLayer
     tanhLayer
-    
-    fullyConnectedLayer(50)
-    batchNormalizationLayer
-    tanhLayer
 
-    fullyConnectedLayer(40)
+    fullyConnectedLayer(50)
     batchNormalizationLayer
     tanhLayer
     
@@ -162,7 +162,7 @@ network = [
 %     batchNormalizationLayer
 %     tanhLayer
     
-    fullyConnectedLayer(20)
+    fullyConnectedLayer(25)
     batchNormalizationLayer
     tanhLayer
     
