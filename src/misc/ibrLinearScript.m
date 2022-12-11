@@ -1,6 +1,22 @@
+nU=3;
+nThresh=3;
 Ue2=zeros(nU,nThresh);
 
-x0=-ewxvPur(7:12)+ewxvEva(7:12);
+x0=ewxvPur(7:12)-ewxvEva(7:12);
+
+QfP=zeros(6,6);
+QfE=zeros(6,6);
+
+QfP(1:3,1:3)=QfP(1:3,1:3)+Spur.Qlin;
+QfE(1:3,1:3)=QfE(1:3,1:3)+Seva.Qlin;
+QfE=QfE; %accounting for signage difference in inputs
+
+QlinPfull=zeros(6,6);
+QlinPfull(1:3,1:3)=Spur.Qlin;
+
+QlinEfull=zeros(6,6);
+QlinEfull(1:3,1:3)=Seva.Qlin;
+QlinEfull=QlinEfull;
 
 for iiBR=1:5
     % fix Eva, solve Pur
@@ -10,29 +26,32 @@ for iiBR=1:5
     lX=length(x0);
     G=[Bpur zeros(lX,nUlin*(nThresh-1))];
     D=Beva*uOppApprx(:,1);
+    H=A;
     if nThresh>1
         for ij=2:nThresh
             D=[D
-                A*D(end-lX,:)+Beva*uOppApprx(:,ij)];
+                A*D(end-lX+1:end)+Beva*uOppApprx(:,ij)];
             G=[G
-                A*G(end-lX,:)];
-            G(ij*lX:(ij+1)*lX-1 , ij*nU:(ij+1)*nU-1)=Bpur;
+                A*G(end-lX+1:end,1:end)];
+            H=[H
+                mpower(A,ij)];
+            G((ij-1)*lX+1:ij*lX , (ij-1)*nU+1:ij*nU)=Bpur;
         end
     end
 
-    M=D*x0+T;
+    M=H*x0+D;
     
     % Form block diagonal stacked weight matrices
-    Ar = repmat(Seva.Qlin, 1, nThresh);
-    Ac = mat2cell(Ar, size(Seva.Qlin,1), repmat(size(Seva.Qlin,2),1,nThresh));
+    Ar = repmat(QlinPfull, 1, nThresh);
+    Ac = mat2cell(Ar, size(QlinEfull,1), repmat(size(QlinPfull,2),1,nThresh));
     Qprime = blkdiag(Ac{:});
-    Qprime(end-lX+1:end,end-lX+1:end)=Qprime(end-lX+1:end,end-lX+1:end)+Seva.QfLin;
+    Qprime(end-lX+1:end,end-lX+1:end)=Qprime(end-lX+1:end,end-lX+1:end)+QfE;
     Ar = repmat(Seva.Rselflin, 1, nThresh);
-    Ac = mat2cell(Ar, size(Seva.Rselflin,1), repmat(size(Seva.Rselflin,2),1,nThresh));
+    Ac = mat2cell(Ar, size(Spur.Rselflin,1), repmat(size(Spur.Rselflin,2),1,nThresh));
     Rprime = blkdiag(Ac{:});
 
     % solve LS here
-    Upp=-inv(G'*Qprime*G + Rprime)*(G'*Q*M);
+    Upp=-inv(G'*Qprime*G + Rprime)*(G'*Qprime*M);
     Up2=reshape(Upp,[nUlin,nThresh]);
 
 
@@ -42,25 +61,28 @@ for iiBR=1:5
     lX=length(x0);
     G=[Beva zeros(lX,nU*(nThresh-1))];
     D=Bpur*uOppApprx(:,1);
+    H=A;
     if nThresh>1
         for ij=2:nThresh
             D=[D
-                A*D(end-lX)+Bpur*uOppApprx(:,ij)];
+                A*D(end-lX+1:end)+Beva*uOppApprx(:,ij)];
             G=[G
-                A*G(end-lX,:)];
-            G(ij*lX:(ij+1)*lX-1 , ij*nU:(ij+1)*nU-1)=Beva;
+                A*G(end-lX+1:end,1:end)];
+            H=[H
+                mpower(A,ij)];
+            G((ij-1)*lX+1:ij*lX , (ij-1)*nU+1:ij*nU)=Beva;
         end
     end
 
-    M=D*x0+T;
+    M=H*x0+D;
 
     % Form block diagonal stacked weight matrices
-    Ar = repmat(Spur.Qlin, 1, nThresh);
-    Ac = mat2cell(Ar, size(Spur.Qlin,1), repmat(size(Spur.Qlin,2),1,nThresh));
+    Ar = repmat(QlinEfull, 1, nThresh);
+    Ac = mat2cell(Ar, size(QlinEfull,1), repmat(size(QlinEfull,2),1,nThresh));
     Qprime = blkdiag(Ac{:});
-    Qprime(end-lX+1:end,end-lX+1:end)=Qprime(end-lX+1:end,end-lX+1:end)+Spur.QfLin;
+    Qprime(end-lX+1:end,end-lX+1:end)=Qprime(end-lX+1:end,end-lX+1:end)+QfP;
     Ar = repmat(Seva.Rselflin, 1, nThresh);
-    Ac = mat2cell(Ar, size(Spur.Rselflin,1), repmat(size(Spur.Rselflin,2),1,nThresh));
+    Ac = mat2cell(Ar, size(Seva.Rselflin,1), repmat(size(Seva.Rselflin,2),1,nThresh));
     Rprime = blkdiag(Ac{:});
 
     % solve LS here
@@ -73,3 +95,12 @@ for iiBR=1:5
 
 
 end
+
+
+
+% Ueout=Ue2
+% Upout=Up2
+
+
+
+

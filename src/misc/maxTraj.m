@@ -380,9 +380,43 @@ elseif strcmp(costType,'entropy')
 end
 
 
-Vset = Vtraj;
-[minv,mindex]=max(Vtraj);
-uPur = uPset{mindex};
+if strcmp(costType,'entropy-ga')
+    cfnc=@(x) helperFuncForEntropyGA(x,Spur,Seva,gameState,miscParams,heurTypeStruc,muVeck,tSimMMKF);
+    [x2,Vset]=ga(@cfnc,2*tSimMMKF);
+    xPur=reshape(x2, [2 tSimMMKF]);
+else
+    Vset = Vtraj;
+    [minv,mindex]=max(Vtraj);
+    uPur = uPset{mindex};
+end
 
 end
+
+%
+%
+%
+%
+%
+%
+%
+
+
+function J = helperFuncForEntropyGA(x,SpurT,SevaT,gameStateT,miscParams,heurTypeStruc,muVeck,tSimMMKF)
+x2=reshape(x,[2 tSimMMKF]);
+uPset={};
+uPset{1}=x2;
+J=calcEntropyCostForGA(SpurT,SevaT,gameStateT,miscParams,uPset,heurTypeStruc,muVeck,tSimMMKF);
+end
+
+
+
+
+
+
+
+
+
+
+
+
 

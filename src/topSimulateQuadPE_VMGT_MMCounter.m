@@ -63,7 +63,7 @@ utempFine=mapUtempToUvec(utempFine,"circle",utype);
 
 n=0;
 z31=zeros(3,1);
-ewxvPur=[z31; z31; 1;0.1;0; z31];
+ewxvPur=[z31; z31; 1;0;0; z31];
 ewxvEva=[zeros(12,1)];
 xPur=[ewxvPur;ewxvEva];
 xEva=[ewxvPur;ewxvEva];
@@ -123,11 +123,36 @@ Seva.Qlin=Qeva(7:9,7:9);
 Spur.Rselflin=eye(3);
 Seva.Rselflin=eye(3);
 nUlin=3;
-ibrLinearScript
 
 tic
 for t=t0:dt:tmax
     n=n+1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ibrLinearScript
+
+
+
+
+
+
+
+
+
+
+
     
     Spur.Jname='J_purQuad';
     Seva.Jname='J_evaQuad';
