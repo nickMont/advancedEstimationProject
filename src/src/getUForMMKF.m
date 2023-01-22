@@ -76,6 +76,14 @@ elseif strcmp(heurTypeStrucIJ,'vmgt-heur2')
     uPurTemp=uPurTempVMGTH;
     Ru=0.10*eye(4)+Ru2InflateE;
     ummkfTypeStack{(iT-1)*nmod+ij,1}='nash-vmgt-heur2';
+elseif strcmp(heurTypeStrucIJ,'ibr-linear-3d')
+    ibrLinearScript;
+    uEvaTemp=uEvaQuadOut;
+    uPurTemp=uPurQuadOut;
+elseif strcmp(heurTypeStrucIJ,'ibr-linear-2d')
+    ibrLinear2DScript;
+    uEvaTemp=uEvaQuadOut;
+    uPurTemp=uPurQuadOut;
 elseif strcmp(heurTypeStrucIJ,'other')
     uEvaTemp=omega_hover*ones(4,1);
     uPurTemp=omega_hover*ones(4,1);

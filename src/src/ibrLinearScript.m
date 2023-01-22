@@ -28,14 +28,14 @@ for iiBR=1:5
     D=Beva*uOppApprx(:,1);
     H=A;
     if nThresh>1
-        for ij=2:nThresh
+        for ibt=2:nThresh
             D=[D
-                A*D(end-lX+1:end)+Beva*uOppApprx(:,ij)];
+                A*D(end-lX+1:end)+Beva*uOppApprx(:,ibt)];
             G=[G
                 A*G(end-lX+1:end,1:end)];
             H=[H
-                mpower(A,ij)];
-            G((ij-1)*lX+1:ij*lX , (ij-1)*nU+1:ij*nU)=Bpur;
+                mpower(A,ibt)];
+            G((ibt-1)*lX+1:ibt*lX , (ibt-1)*nU+1:ibt*nU)=Bpur;
         end
     end
 
@@ -63,14 +63,14 @@ for iiBR=1:5
     D=Bpur*uOppApprx(:,1);
     H=A;
     if nThresh>1
-        for ij=2:nThresh
+        for ibt=2:nThresh
             D=[D
-                A*D(end-lX+1:end)+Beva*uOppApprx(:,ij)];
+                A*D(end-lX+1:end)+Beva*uOppApprx(:,ibt)];
             G=[G
                 A*G(end-lX+1:end,1:end)];
             H=[H
-                mpower(A,ij)];
-            G((ij-1)*lX+1:ij*lX , (ij-1)*nU+1:ij*nU)=Beva;
+                mpower(A,ibt)];
+            G((ibt-1)*lX+1:ibt*lX , (ibt-1)*nU+1:ibt*nU)=Beva;
         end
     end
 
@@ -96,6 +96,11 @@ for iiBR=1:5
 
 end
 
+
+xd = xPur(13:24); xd(9)=0;
+uEvaQuadOut = quadControllerACCONLY(xd, zeros(4,1), 3, [Ue2(:,1);0],0);
+xd = xPur(1:12); xd(9)=0;
+uPurQuadOut = quadControllerACCONLY(xd, zeros(4,1), 3, [Up2(:,1);0],0);
 
 
 % Ueout=Ue2
