@@ -14,7 +14,7 @@ rng(rngseedno);
 
 
 indexToRunInfo=[2];
-infoType = 'entropy'; % entropy, distance
+infoType = 'entropy-ga'; % entropy, distance
 indexToRunInfo=[];
 
 % Use best response by taking mean of rotor speeds

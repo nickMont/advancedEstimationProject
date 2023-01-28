@@ -382,13 +382,20 @@ end
 
 if strcmp(costType,'entropy-ga')
     cfnc=@(x) helperFuncForEntropyGA(x,Spur,Seva,gameState,miscParams,heurTypeStruc,muVeck,tSimMMKF);
-    [x2,Vset]=ga(@cfnc,2*tSimMMKF);
-    xPur=reshape(x2, [2 tSimMMKF]);
+    vv=[1;1]*(1:tSimMMKF);
+    vv=vv(:);
+    [x2,Vset]=ga(@cfnc,2*tSimMMKF,[],[],[],[], -vv*umax, vv*umax);
+    uPur=reshape(x2, [2 tSimMMKF]);
 else
     Vset = Vtraj;
     [minv,mindex]=max(Vtraj);
     uPur = uPset{mindex};
 end
+
+
+
+
+
 
 end
 
