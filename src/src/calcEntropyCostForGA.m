@@ -25,6 +25,9 @@ Reva = Seva.Jparams.Rself;
 FLAG_tryMotionPredictionInVM2=gameState.Rtarget.useMotionPrediction;
 FLAG_tryVMGTbutBypassHeuristics=gameState.Rtarget.useNoHeuristics;
 
+nUe = miscParams.numTargets*length(heurTypeStruc);
+nUset = 1;
+
 Rk = 0.1*eye(12); %temp "fake" measurement covariance
 
 uEvaEst=[0;0]; %for VM
@@ -43,6 +46,49 @@ x2ent=cell(nUe,1);
 numModels = nmod*miscParams.numTargets;
 %     xhatE2 = xhatE;
 %     PhatE2 = PhatE;
+
+uEset=cell(nUe,1);
+
+for iT=1:miscParams.numTargets
+    targetLocation=miscParams.targetLocationVec{iT};
+    for ij=1:nmod
+        nn=nn+1;
+        uEvaTemp=[];
+        %         tt = heurTypeStruc{ij}
+        if strcmp(heurTypeStruc{ij},'vmgt')
+            vmgtScript;
+            uEvaTemp=uEvaVMGT;
+            Ru=0.10*du*eye(4);
+        elseif strcmp(heurTypeStruc{ij},'gt-full')
+            gtfullScript;
+            uEvaTemp=uEvaGT;
+            Ru=0.10*du*eye(4);
+        elseif strcmp(heurTypeStruc{ij},'gt-pm')
+            loadPointMassControlParams;
+            Ru=0.20*du*eye(4);
+        elseif strcmp(heurTypeStruc{ij},'vm')
+            velmatchScript;
+            uEvaTemp=uEvaVM;
+            Ru=0.10*eye(4);
+        elseif strcmp(heurTypeStruc{ij},'vmgt-heur')
+            heurtype='both';
+            vmgt_RA_HeurScript;
+            uEvaTemp=uEvaVMGTH;
+            Ru=0.15*eye(4);
+        elseif strcmp(heurTypeStruc{ij},'vmgt-heur2')
+            heurtype='heur_only';
+            vmgt_RA_HeurScript;
+            uEvaTemp=uEvaVMGTH;
+            Ru=0.15*eye(4);
+        elseif strcmp(heurTypeStruc{ij},'other')
+            uEvaTemp=omega_hover*ones(4,1);
+            Ru=1*eye(4);
+        end
+        uEset{nn}=uEvaTemp;
+        RuStack{nn}=Ru;
+    end
+end
+
 for ik=1:nUe
     x2ent{ik,1} = f_dynEvaQuad(xTrue(13:24),uEset{ik,1},dt,zeros(2,1));
     zMeas = x2ent{ik,1};
@@ -104,6 +150,21 @@ for ik=1:nUe
     mu2{ik,1}=muTemp/sum(muTemp);
     xhatE2(:,:,ik) = xhatE;
     PhatE2(:,:,:,ik) = PhatE;
+end
+
+%propagate each evader type
+nn=0;
+for ij = 1:nUe
+    %     uu=uEset{ij}
+    xE2{ij} = feval(Seva.fname,gameState.xEva,uEset{ij},gameState.dt,zeros(6,1));
+end
+
+%propagate each input control
+for ij = 1:nUset
+    dx = uPset{ij};
+    x2=xTrue(1:12); x2(7:8)=x2(7:8)+dx;
+    uPT = quadController(xTrue(1:12),zeros(4,1),zeros(3,1),x2,1,zeros(12,1));
+    xP2{ij} = feval(Spur.fname,gameState.xPur,uPT,gameState.dt,zeros(6,1));
 end
 
 

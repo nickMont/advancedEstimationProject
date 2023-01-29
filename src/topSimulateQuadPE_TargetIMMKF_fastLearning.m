@@ -13,9 +13,9 @@ rng(rngseedno);
 %  compatible
 
 
-indexToRunInfo=[2];
+indexToRunInfo=[1];
 infoType = 'entropy-ga'; % entropy, distance
-indexToRunInfo=[];
+% indexToRunInfo=[];
 
 % Use best response by taking mean of rotor speeds
 flagUseMeanBestResponse=false;

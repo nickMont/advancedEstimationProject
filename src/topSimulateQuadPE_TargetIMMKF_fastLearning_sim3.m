@@ -35,7 +35,8 @@ timeStore=[];
 muVeckStack=cell(3,1);
 
 % indInfo = [1 4];
-indInfo = [1 3 5];
+% indInfo = [1 3 5];
+indInfo = [1];
 
 for i3sim=1:3
 
@@ -52,7 +53,7 @@ if i3sim==1
     infoType = 'entropy'; % entropy, distance
 elseif i3sim==2
     indexToRunInfo=indInfo;
-    infoType='entropy';
+    infoType='entropy-ga';
 elseif i3sim==3
     indexToRunInfo=indInfo;
     infoType='distance';
