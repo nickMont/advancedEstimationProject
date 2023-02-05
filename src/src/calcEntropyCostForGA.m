@@ -33,6 +33,8 @@ Rk = 0.1*eye(12); %temp "fake" measurement covariance
 uEvaEst=[0;0]; %for VM
 
 xPur = [gameState.xPur;gameState.xEva];
+ewxvPur = gameState.xPur;
+ewxvEva = gameState.xEva;
 xTrue = xPur;
 nn=0;
 RuStack=cell(nUe,1);
@@ -80,6 +82,12 @@ for iT=1:miscParams.numTargets
             vmgt_RA_HeurScript;
             uEvaTemp=uEvaVMGTH;
             Ru=0.15*eye(4);
+        elseif strcmp(heurTypeStruc{ij},'ibr-linear-3d')
+            ibrLinearScript;
+            uEvaTemp=uEvaQuadOut;
+        elseif strcmp(heurTypeStruc{ij},'ibr-linear-2d')
+            ibrLinear2DScript;
+            uEvaTemp=uEvaQuadOut;
         elseif strcmp(heurTypeStruc{ij},'other')
             uEvaTemp=omega_hover*ones(4,1);
             Ru=1*eye(4);
@@ -193,6 +201,9 @@ for ikUxT=1:nU2
 
         xPur=[xPsim;xEsim];
 
+        ewxvPur = xPsim;
+        ewxvEva = xEsim;
+
         for inn2 = 1:nU2
             ikFakeH = controlXtargetCombs(inn2,2);
             ikFakeT = controlXtargetCombs(inn2,1);
@@ -216,6 +227,12 @@ for ikUxT=1:nU2
                 heurtype='heur_only';
                 vmgt_RA_HeurScript;
                 uEvaTemp=uEvaVMGTH;
+            elseif strcmp(heurTypeStruc{ikFakeH},'ibr-linear-3d')
+                ibrLinearScript;
+                uEvaTemp=uEvaQuadOut;
+            elseif strcmp(heurTypeStruc{ikFakeH},'ibr-linear-2d')
+                ibrLinear2DScript;
+                uEvaTemp=uEvaQuadOut;
             elseif strcmp(heurTypeStruc{ikFakeH},'other')
                 uEvaTemp=omega_hover*ones(4,1);
             end

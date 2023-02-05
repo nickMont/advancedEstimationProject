@@ -38,7 +38,7 @@ muVeckStack=cell(3,1);
 % indInfo = [1 3 5];
 indInfo = [1];
 
-for i3sim=1:3
+for i3sim=1:4
 
 %NOTE: TUNING IN VMRGO REQUIRES USING fdynEva AND fdynPur FOR PM SIM
 %  SET DRAG PARAMS IN BOTH TO 0.
@@ -57,6 +57,9 @@ elseif i3sim==2
 elseif i3sim==3
     indexToRunInfo=indInfo;
     infoType='distance';
+elseif i3sim==4
+    indexToRunInfo=indInfo;
+    infoType='entropy';
 end
 
 % Use best response by taking mean of rotor speeds
@@ -87,6 +90,7 @@ heurTypeStruc{2}='gt-full';
 heurTypeStruc{3}='gt-pm';
 heurTypeStruc{4}='vm';
 heurTypeStruc{5}='vmgt-heur';
+heurTypeStruc{6}='ibr-linear-2d';
 % heurTypeStruc{6}='other';
 [~,nmod]=size(heurTypeStruc);
 
@@ -174,10 +178,12 @@ for t=t0:dt:tmax
     Spur.Jparams.Rself=Rpur;
     Spur.Jparams.Ropp=zeros(4,4);
     Spur.uLmax=uLmax;
+    Spur.Rselflin=eye(2);
     Seva.Jparams.Q=Qeva;
     Seva.Jparams.Rself=Reva;
     Seva.Jparams.Ropp=zeros(4,4);
     Seva.uLmax=uLmax;
+    Seva.Rselflin=eye(2);
     
     % Robust estimation params
     miscParams.Qk=0.001*eye(24);
@@ -347,6 +353,11 @@ for t=t0:dt:tmax
                 uEvaTemp=uEvaVMGTH;
                 Ru=0.10*eye(4);
                 uEvaTypeStack{(iT-1)*nmod+ij,1}='nash-vmgt-heur2';
+            elseif strcmp(heurTypeStruc{ij},'ibr-linear-2d')
+                ibrLinear2DScript;
+                Ru=0.10*eye(4);
+                uEvaTemp=uEvaQuadOut;
+                uPurTemp=uPurQuadOut;
             elseif strcmp(heurTypeStruc{ij},'other')
                 uEvaTemp=omega_hover*ones(4,1);
                 Ru=1*eye(4);

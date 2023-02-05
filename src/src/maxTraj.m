@@ -27,6 +27,9 @@ vmtune = miscParams.vmtune;
 scaleVec = miscParams.scaleVec;
 du = miscParams.du;
 
+ewxvPur=gameState.xPur;
+ewxvEva=gameState.xEva;
+
 xE0 = gameState.xEva(7:9);
 
 QtargetP = Spur.Jparams.Q_target;
@@ -78,6 +81,12 @@ for iT=1:miscParams.numTargets
             vmgt_RA_HeurScript;
             uEvaTemp=uEvaVMGTH;
             Ru=0.15*eye(4);
+        elseif strcmp(heurTypeStruc{ij},'ibr-linear-3d')
+            ibrLinearScript;
+            uEvaTemp=uEvaQuadOut;
+        elseif strcmp(heurTypeStruc{ij},'ibr-linear-2d')
+            ibrLinear2DScript;
+            uEvaTemp=uEvaQuadOut;
         elseif strcmp(heurTypeStruc{ij},'other')
             uEvaTemp=omega_hover*ones(4,1);
             Ru=1*eye(4);
@@ -163,7 +172,7 @@ end
 %propagate each evader type
 nn=0;
 for ij = 1:nUe
-    %     uu=uEset{ij}
+%         uu=uEset{ij}
     xE2{ij} = feval(Seva.fname,gameState.xEva,uEset{ij},gameState.dt,zeros(6,1));
 end
 
@@ -183,12 +192,14 @@ indexInCost = indexInCost(nonRepList==1,:);
 if strcmp(costType,'distance')
     for ip = 1:nUset
         gameState.xPur = xP2{ip};
+        ewxvPur = gameState.xPur;
         uEset={};
         nn=0;
         for iT=1:miscParams.numTargets
             targetLocation=miscParams.targetLocationVec{iT};
             for ij=1:nmod
                 gameState.xEva=xE2{ij};
+                ewxvEva=gameState.xEva;
                 xPur = [xP2{ip};xE2{ij}];
                 xTrue = xPur;
                 nn=nn+1;
@@ -212,6 +223,12 @@ if strcmp(costType,'distance')
                     heurtype='heur_only';
                     vmgt_RA_HeurScript;
                     uEvaTemp=uEvaVMGTH;
+                elseif strcmp(heurTypeStruc{ij},'ibr-linear-3d')
+                    ibrLinearScript;
+                    uEvaTemp=uEvaQuadOut;
+                elseif strcmp(heurTypeStruc{ij},'ibr-linear-2d')
+                    ibrLinear2DScript;
+                    uEvaTemp=uEvaQuadOut;
                 elseif strcmp(heurTypeStruc{ij},'other')
                     uEvaTemp=omega_hover*ones(4,1);
                 end
@@ -381,11 +398,11 @@ end
 
 
 if strcmp(costType,'entropy-ga')
-%     options = optimoptions('ga','MaxStallGenerations',5,'MaxGenerations',10);
+    optimoptions('fmincon','MaxIterations',3000);
     cfnc = @(x) helperFuncForEntropyGA(x,Spur,Seva,gameState,miscParams,heurTypeStruc,muVeck,tSimMMKF);
     vv=[1;1]*(1:tSimMMKF);
     vv=vv(:);
-    [x2,Vset]=ga(@(x) cfnc(x), 2*tSimMMKF, [],[],[],[], -vv*umax, vv*umax, [], options);
+    [x2,Vset]=fmincon(@(x) cfnc(x), zeros(2*tSimMMKF,1), [],[],[],[], -vv*umax, vv*umax, []);
     uPur=reshape(x2, [2 tSimMMKF]);
 else
     Vset = Vtraj;

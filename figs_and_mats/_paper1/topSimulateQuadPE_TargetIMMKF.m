@@ -42,7 +42,7 @@ heurTypeStruc{3}='gt-pm';
 heurTypeStruc{4}='vm';
 heurTypeStruc{5}='vmgt-heur';
 heurTypeStruc{6}='ibr-linear-2d';
-% heurTypeStruc{6}='other';
+heurTypeStruc{7}='other';
 [~,nmod]=size(heurTypeStruc);
 
 % load nnTrainSets\nnQuadDyn\network.mat
@@ -477,7 +477,7 @@ plot(dt*(0:n),muHist(8,:),'k-+')
 figset
 xlabel('Time Elapsed (s)')
 ylabel('Model Probability')
-plot(dt*(0:n),sum(muHist([4 5 9 10],:)),'k-s')
+plot(dt*(0:n),sum(muHist([4 5 9 10 11 12 13 14],:)),'k-s')
 % legend('VM/GT','GT','GT/PM','VM','VMGTHeur','other','VM/GT 2')
 legend('VM/GT 1','GT 1','GT/PM 1','VM/GT 2','GT 2','GT/PM 2','others')
 figset
