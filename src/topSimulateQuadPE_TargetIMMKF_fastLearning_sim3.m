@@ -36,7 +36,7 @@ muVeckStack=cell(3,1);
 
 % indInfo = [1 4];
 % indInfo = [1 3 5];
-indInfo = [1];
+indInfo = [1 2];
 
 for i3sim=1:4
 
@@ -577,7 +577,24 @@ outmu=[tt(1,:)'];
 tt=muVeckStack{2,1};
 outmu=[outmu tt(1,:)'];
 tt=muVeckStack{3,1};
+outmu=[outmu tt(1,:)'];
+tt=muVeckStack{4,1};
 outmu=[outmu tt(1,:)']
 
-dMuEntropy = outmu(:,2)-outmu(:,1)
+dMuOptimizer = outmu(:,2)-outmu(:,1)
 dMuDistance = outmu(:,3)-outmu(:,1)
+dMuEntropy = outmu(:,4)-outmu(:,1)
+
+figure(1);clf;
+plot(((1:length(dMuEntropy)-1)-1)*dt , dMuDistance(2:end)*100 , 'k--x')
+hold on
+plot(((1:length(dMuEntropy)-1)-1)*dt , dMuEntropy(2:end)*100 , 'k--*')
+hold on
+plot(((1:length(dMuEntropy)-1)-1)*dt , dMuOptimizer(2:end)*100 , 'k--o')
+hold on
+legend('Distance heuristic','Discrete-set entropy','Entropy minimization')
+xlabel('Time (s)')
+ylabel('Change in \mu_{true} from baseline IMMKF (%)')
+figset
+
+
