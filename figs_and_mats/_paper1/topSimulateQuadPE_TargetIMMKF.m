@@ -442,7 +442,7 @@ plot(xStore(19,:),xStore(20,:),'-*k')
 figset
 xlabel('East displacement (m)')
 ylabel('North displacement (m)')
-legend('Pursuer trajectory','Evader trajectory')
+legend('Pursuer trajectory','Evader trajectory','Location','southeast')
 figset
 
 %<<>> clean this up
